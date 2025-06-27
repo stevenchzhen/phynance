@@ -2,18 +2,18 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-import os
 from datetime import datetime
 from typing import Dict, Any
 
-# Import database configuration
+# Import database configuration and settings
 from app.database import get_db, engine, DATABASE_URL
+from app.config import settings
 
 # Create FastAPI app instance
 app = FastAPI(
-    title="Phynance API",
+    title=settings.app_name,
     description="A modern financial application API",
-    version="1.0.0",
+    version=settings.app_version,
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -21,7 +21,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,9 +31,10 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to Phynance API",
-        "version": "1.0.0",
-        "status": "running"
+        "message": f"Welcome to {settings.app_name}",
+        "version": settings.app_version,
+        "status": "running",
+        "environment": settings.environment
     }
 
 @app.get("/health")
@@ -41,9 +42,10 @@ async def health_check():
     """Health check endpoint to verify API status"""
     return {
         "status": "healthy",
-        "service": "phynance-api",
+        "service": settings.app_name,
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0"
+        "version": settings.app_version,
+        "environment": settings.environment
     }
 
 @app.get("/health/db")
@@ -66,9 +68,10 @@ async def api_status():
     """API status endpoint with detailed information"""
     return {
         "api": {
-            "name": "Phynance API",
-            "version": "1.0.0",
-            "status": "operational"
+            "name": settings.app_name,
+            "version": settings.app_version,
+            "status": "operational",
+            "environment": settings.environment
         },
         "database": {
             "url": DATABASE_URL.split("://")[0] if "://" in DATABASE_URL else "sqlite",
@@ -86,6 +89,6 @@ if __name__ == "__main__":
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        log_level="info"
+        reload=settings.debug,
+        log_level=settings.log_level.lower()
     ) 

@@ -1,10 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
+from app.config import get_database_url
 
-# Database URL - can be overridden by environment variable
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./phynance.db")
+# Get database URL from settings
+DATABASE_URL = get_database_url()
 
 # Create SQLAlchemy engine
 engine = create_engine(
