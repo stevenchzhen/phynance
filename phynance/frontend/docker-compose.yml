@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  frontend:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - proxy
+  proxy:
+    image: node:18-alpine
+    command: npx http-proxy-middleware --target http://host.docker.internal:8080 --port 8081 --changeOrigin true
+    ports:
+      - '8081:8081'

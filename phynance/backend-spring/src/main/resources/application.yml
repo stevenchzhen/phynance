@@ -1,0 +1,10 @@
+financial:
+  apis:
+    alpha-vantage:
+      api-key: Q2RK51GQU4BAHGRN
+      url: https://www.alphavantage.co/query
+      rate-limit-per-second: 0.0833
+    twelve-data:
+      api-key: d7bd3f79b2dd4b38832bfacccae40e86
+      url: https://api.twelvedata.com
+      rate-limit-per-second: 0.1333
