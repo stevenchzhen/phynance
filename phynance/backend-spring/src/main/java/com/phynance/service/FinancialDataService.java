@@ -46,4 +46,14 @@ public class FinancialDataService {
         }
         throw new RuntimeException("All providers failed or daily limits reached");
     }
+
+    /**
+     * Fetch historical OHLCV data for a symbol and date range (mock implementation).
+     * In a real implementation, this would call an external API or database.
+     */
+    public java.util.List<com.phynance.model.MarketDataDto> getHistoricalData(String symbol, String startDate, String endDate) {
+        // TODO: Replace with real data fetching logic
+        // For now, return an empty list or mock data
+        return java.util.Collections.emptyList();
+    }
 } 
