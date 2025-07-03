@@ -1,8 +1,8 @@
 package com.phynance.service.provider;
 
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 
 public interface FinancialDataProvider {
-    MarketDataDto getMarketData(String symbol) throws Exception;
+    MarketData getMarketData(String symbol) throws Exception;
     String getName();
 } 

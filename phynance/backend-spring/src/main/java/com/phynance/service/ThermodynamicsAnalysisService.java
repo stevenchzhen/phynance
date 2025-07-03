@@ -2,8 +2,9 @@ package com.phynance.service;
 
 import com.phynance.model.ThermodynamicsAnalysisRequest;
 import com.phynance.model.ThermodynamicsAnalysisResponse;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +26,12 @@ public class ThermodynamicsAnalysisService {
     /**
      * Analyze stock data using thermodynamic principles.
      * @param request ThermodynamicsAnalysisRequest
-     * @param ohlcvData List of MarketDataDto for the main symbol
-     * @param relatedOhlcv List of List<MarketDataDto> for related symbols (sector correlation)
+     * @param ohlcvData List of MarketData for the main symbol
+     * @param relatedOhlcv List of List<MarketData> for related symbols (sector correlation)
      * @return ThermodynamicsAnalysisResponse
      */
-    public ThermodynamicsAnalysisResponse analyze(ThermodynamicsAnalysisRequest request, List<MarketDataDto> ohlcvData, List<List<MarketDataDto>> relatedOhlcv) {
+    @Cacheable(value = "thermodynamics", key = "#request.toString().concat('-').concat(#ohlcvData.hashCode().toString()).concat('-').concat(#relatedOhlcv.hashCode().toString())")
+    public ThermodynamicsAnalysisResponse analyze(ThermodynamicsAnalysisRequest request, List<MarketData> ohlcvData, List<List<MarketData>> relatedOhlcv) {
         List<ThermodynamicsAnalysisResponse.TemperatureTrend> tempTrends = new ArrayList<>();
         List<ThermodynamicsAnalysisResponse.PhaseTransitionAlert> phaseTransitions = new ArrayList<>();
         List<ThermodynamicsAnalysisResponse.ThermalPrediction> predictions = new ArrayList<>();

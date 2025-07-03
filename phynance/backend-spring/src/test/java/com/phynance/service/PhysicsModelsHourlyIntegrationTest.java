@@ -1,6 +1,6 @@
 package com.phynance.service;
 
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import com.phynance.service.provider.YFinanceProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,14 +36,14 @@ public class PhysicsModelsHourlyIntegrationTest {
         for (String symbol : symbols) {
             System.out.println("\n==============================");
             System.out.println("Testing symbol: " + symbol);
-            List<MarketDataDto> data = yFinanceProvider.getHourlyData(symbol, start.toString(), end.toString());
+            List<MarketData> data = yFinanceProvider.getHourlyData(symbol, start.toString(), end.toString());
             System.out.println("Fetched " + data.size() + " hourly data points for " + symbol);
             if (data.size() < 60) {
                 System.out.println("Warning: Less than 60 data points fetched. Test may not be representative.");
             }
             System.out.println("First 3 data points:");
             for (int i = 0; i < Math.min(3, data.size()); i++) {
-                MarketDataDto md = data.get(i);
+                MarketData md = data.get(i);
                 System.out.printf("  %s: O=%.2f, H=%.2f, L=%.2f, C=%.2f, V=%d\n",
                         md.getTimestamp(), md.getOpen(), md.getHigh(), md.getLow(), md.getClose(), md.getVolume());
             }

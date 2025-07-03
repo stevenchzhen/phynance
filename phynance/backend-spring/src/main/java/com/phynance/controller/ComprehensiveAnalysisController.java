@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping("/api/v1/analysis")
 public class ComprehensiveAnalysisController {
@@ -14,8 +16,7 @@ public class ComprehensiveAnalysisController {
     private ComprehensiveAnalysisService comprehensiveAnalysisService;
 
     @PostMapping("/comprehensive")
-    public ResponseEntity<ComprehensiveAnalysisResponse> analyze(@RequestBody ComprehensiveAnalysisRequest request) {
-        ComprehensiveAnalysisResponse response = comprehensiveAnalysisService.analyze(request);
-        return ResponseEntity.ok(response);
+    public CompletableFuture<ComprehensiveAnalysisResponse> analyze(@RequestBody ComprehensiveAnalysisRequest request) {
+        return comprehensiveAnalysisService.analyze(request);
     }
 } 

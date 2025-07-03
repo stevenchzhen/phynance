@@ -1,6 +1,6 @@
 package com.phynance.controller;
 
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import com.phynance.service.FinancialDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ public class MarketDataController {
     }
 
     @GetMapping("/api/v1/market-data")
-    public MarketDataDto getMarketData(@RequestParam String symbol) {
+    public MarketData getMarketData(@RequestParam String symbol) {
         return financialDataService.getMarketData(symbol);
     }
 } 

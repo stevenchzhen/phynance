@@ -2,7 +2,7 @@ package com.phynance.controller;
 
 import com.phynance.model.MarketTemperatureAnalysisRequest;
 import com.phynance.model.MarketTemperatureAnalysisResponse;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import com.phynance.service.FinancialDataService;
 import com.phynance.service.MarketTemperatureAnalysisService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +45,9 @@ public class MarketTemperatureAnalysisController {
             return ResponseEntity.badRequest().body("Temperature window must be between 2 and 365");
         }
         // Fetch OHLCV data for all symbols
-        List<List<MarketDataDto>> allOhlcv = new ArrayList<>();
+        List<List<MarketData>> allOhlcv = new ArrayList<>();
         for (String symbol : request.getSymbols()) {
-            List<MarketDataDto> ohlcv = financialDataService.getHistoricalData(symbol, request.getStartDate(), request.getEndDate());
+            List<MarketData> ohlcv = financialDataService.getHistoricalData(symbol, request.getStartDate(), request.getEndDate());
             if (ohlcv == null || ohlcv.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No historical data found for symbol: " + symbol);
             }

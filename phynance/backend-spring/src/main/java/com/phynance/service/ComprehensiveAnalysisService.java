@@ -5,11 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
+import java.util.concurrent.CompletableFuture;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@org.springframework.scheduling.annotation.Async
 public class ComprehensiveAnalysisService {
     private static final Logger logger = LoggerFactory.getLogger(ComprehensiveAnalysisService.class);
 
@@ -20,13 +23,14 @@ public class ComprehensiveAnalysisService {
     // For demo, use in-memory map for performance; replace with JPA repo for persistence
     private final Map<String, ComprehensiveAnalysisResponse.ModelPerformance> performanceDb = new HashMap<>();
 
-    public ComprehensiveAnalysisResponse analyze(ComprehensiveAnalysisRequest req) {
+    @Async
+    public CompletableFuture<ComprehensiveAnalysisResponse> analyze(ComprehensiveAnalysisRequest req) {
         logger.info("Starting comprehensive analysis for {} from {} to {}", req.getSymbol(), req.getStartDate(), req.getEndDate());
         ComprehensiveAnalysisResponse resp = new ComprehensiveAnalysisResponse();
         resp.setSymbol(req.getSymbol());
         try {
             // 1. Fetch historical data
-            List<MarketDataDto> ohlcv = financialDataService.getHistoricalData(req.getSymbol(), req.getStartDate(), req.getEndDate());
+            List<MarketData> ohlcv = financialDataService.getHistoricalData(req.getSymbol(), req.getStartDate(), req.getEndDate());
             // 2. Harmonic Oscillator (PhysicsModelService)
             HarmonicOscillatorRequest hReq = new HarmonicOscillatorRequest();
             List<HarmonicOscillatorRequest.Ohlcv> ohlcvList = ohlcv.stream().map(md -> {
@@ -134,6 +138,6 @@ public class ComprehensiveAnalysisService {
             logger.error("Error in comprehensive analysis: {}", e.getMessage(), e);
             throw new RuntimeException("Comprehensive analysis failed: " + e.getMessage());
         }
-        return resp;
+        return CompletableFuture.completedFuture(resp);
     }
 } 

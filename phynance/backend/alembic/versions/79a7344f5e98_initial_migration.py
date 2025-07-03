@@ -4,6 +4,27 @@ Revision ID: 79a7344f5e98
 Revises: 
 Create Date: 2025-06-26 22:57:01.696480
 
+# ---
+# Partitioning strategy for market_data table (PostgreSQL example):
+#
+# CREATE TABLE market_data (
+#     symbol VARCHAR NOT NULL,
+#     timestamp TIMESTAMP NOT NULL,
+#     open DOUBLE PRECISION NOT NULL,
+#     high DOUBLE PRECISION NOT NULL,
+#     low DOUBLE PRECISION NOT NULL,
+#     close DOUBLE PRECISION NOT NULL,
+#     volume BIGINT NOT NULL,
+#     PRIMARY KEY (symbol, timestamp)
+# ) PARTITION BY RANGE (timestamp);
+#
+# -- Example monthly partition:
+# CREATE TABLE market_data_2024_06 PARTITION OF market_data
+#     FOR VALUES FROM ('2024-06-01') TO ('2024-07-01');
+#
+# Add a new partition each month for best performance.
+# ---
+
 """
 from typing import Sequence, Union
 

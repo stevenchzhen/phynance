@@ -2,7 +2,7 @@ package com.phynance.service;
 
 import com.phynance.model.MarketTemperatureAnalysisRequest;
 import com.phynance.model.MarketTemperatureAnalysisResponse;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,14 +19,14 @@ import java.util.stream.Collectors;
  */
 @Service
 public class MarketTemperatureAnalysisService {
-    public MarketTemperatureAnalysisResponse analyze(MarketTemperatureAnalysisRequest request, List<List<MarketDataDto>> allOhlcv) {
+    public MarketTemperatureAnalysisResponse analyze(MarketTemperatureAnalysisRequest request, List<List<MarketData>> allOhlcv) {
         int window = request.getTemperatureWindow() != null ? request.getTemperatureWindow() : 20;
         List<String> symbols = request.getSymbols();
         List<MarketTemperatureAnalysisResponse.SymbolTemperature> symbolTemps = new ArrayList<>();
         List<Double> allTemps = new ArrayList<>();
         // 1. Calculate temperature for each symbol
         for (int i = 0; i < symbols.size(); i++) {
-            List<MarketDataDto> ohlcv = allOhlcv.get(i);
+            List<MarketData> ohlcv = allOhlcv.get(i);
             double temp = calcTemperature(ohlcv, window);
             allTemps.add(temp);
             MarketTemperatureAnalysisResponse.SymbolTemperature st = new MarketTemperatureAnalysisResponse.SymbolTemperature();
@@ -92,7 +92,7 @@ public class MarketTemperatureAnalysisService {
     /**
      * Calculate market temperature as average squared price change over window.
      */
-    private double calcTemperature(List<MarketDataDto> ohlcv, int window) {
+    private double calcTemperature(List<MarketData> ohlcv, int window) {
         if (ohlcv == null || ohlcv.size() < 2) return 0;
         int n = Math.min(window, ohlcv.size() - 1);
         double sum = 0;
@@ -107,7 +107,7 @@ public class MarketTemperatureAnalysisService {
      * Calculate correlation (heat flow analogy) between two symbols' price changes.
      * Returns Pearson correlation coefficient.
      */
-    private double calcCorrelation(List<MarketDataDto> a, List<MarketDataDto> b) {
+    private double calcCorrelation(List<MarketData> a, List<MarketData> b) {
         int n = Math.min(a.size(), b.size());
         if (n < 2) return 0;
         List<Double> da = new ArrayList<>();

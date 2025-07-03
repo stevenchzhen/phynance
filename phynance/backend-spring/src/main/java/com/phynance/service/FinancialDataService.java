@@ -1,6 +1,6 @@
 package com.phynance.service;
 
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import com.phynance.service.provider.YFinanceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -18,7 +18,7 @@ public class FinancialDataService {
     }
 
     @Cacheable("marketData")
-    public MarketDataDto getMarketData(String symbol) {
+    public MarketData getMarketData(String symbol) {
         try {
             return yFinanceProvider.getMarketData(symbol);
         } catch (Exception e) {
@@ -29,7 +29,7 @@ public class FinancialDataService {
     /**
      * Fetch historical OHLCV data for a symbol and date range using YFinance.
      */
-    public List<MarketDataDto> getHistoricalData(String symbol, String startDate, String endDate) {
+    public List<MarketData> getHistoricalData(String symbol, String startDate, String endDate) {
         try {
             return yFinanceProvider.getHistoricalData(symbol, startDate, endDate);
         } catch (Exception e) {

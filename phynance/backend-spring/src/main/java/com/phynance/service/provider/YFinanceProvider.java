@@ -2,7 +2,7 @@ package com.phynance.service.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ public class YFinanceProvider implements FinancialDataProvider {
     }
 
     @Override
-    public MarketDataDto getMarketData(String symbol) throws Exception {
+    public MarketData getMarketData(String symbol) throws Exception {
         try {
             // Yahoo Finance API endpoint for real-time data
             String url = String.format("https://query1.finance.yahoo.com/v8/finance/chart/%s?interval=1d&range=1d", symbol);
@@ -79,7 +79,7 @@ public class YFinanceProvider implements FinancialDataProvider {
             // Get the latest data point
             int lastIndex = open.size() - 1;
             
-            MarketDataDto dto = new MarketDataDto();
+            MarketData dto = new MarketData();
             dto.setSymbol(symbol);
             dto.setTimestamp(Instant.now());
             dto.setOpen(open.get(lastIndex).asDouble());
@@ -97,7 +97,7 @@ public class YFinanceProvider implements FinancialDataProvider {
         }
     }
 
-    public List<MarketDataDto> getHistoricalData(String symbol, String startDate, String endDate) {
+    public List<MarketData> getHistoricalData(String symbol, String startDate, String endDate) {
         try {
             // Convert dates to Unix timestamps
             long startTimestamp = LocalDateTime.parse(startDate + "T00:00:00").toEpochSecond(ZoneOffset.UTC);
@@ -137,14 +137,14 @@ public class YFinanceProvider implements FinancialDataProvider {
             JsonNode close = quote.get("close");
             JsonNode volume = quote.get("volume");
 
-            List<MarketDataDto> historicalData = new ArrayList<>();
+            List<MarketData> historicalData = new ArrayList<>();
             
             for (int i = 0; i < timestamp.size(); i++) {
                 if (open.get(i).isNull() || close.get(i).isNull()) {
                     continue; // Skip null data points
                 }
                 
-                MarketDataDto dto = new MarketDataDto();
+                MarketData dto = new MarketData();
                 dto.setSymbol(symbol);
                 dto.setTimestamp(Instant.ofEpochSecond(timestamp.get(i).asLong()));
                 dto.setOpen(open.get(i).asDouble());
@@ -165,7 +165,7 @@ public class YFinanceProvider implements FinancialDataProvider {
         }
     }
 
-    public List<MarketDataDto> getHourlyData(String symbol, String startDate, String endDate) {
+    public List<MarketData> getHourlyData(String symbol, String startDate, String endDate) {
         try {
             // Convert dates to Unix timestamps
             long startTimestamp = LocalDateTime.parse(startDate + "T00:00:00").toEpochSecond(ZoneOffset.UTC);
@@ -205,14 +205,14 @@ public class YFinanceProvider implements FinancialDataProvider {
             JsonNode close = quote.get("close");
             JsonNode volume = quote.get("volume");
 
-            List<MarketDataDto> hourlyData = new ArrayList<>();
+            List<MarketData> hourlyData = new ArrayList<>();
 
             for (int i = 0; i < timestamp.size(); i++) {
                 if (open.get(i).isNull() || close.get(i).isNull()) {
                     continue; // Skip null data points
                 }
 
-                MarketDataDto dto = new MarketDataDto();
+                MarketData dto = new MarketData();
                 dto.setSymbol(symbol);
                 dto.setTimestamp(Instant.ofEpochSecond(timestamp.get(i).asLong()));
                 dto.setOpen(open.get(i).asDouble());
@@ -226,7 +226,7 @@ public class YFinanceProvider implements FinancialDataProvider {
 
             // Only return the last 60 data points
             int fromIndex = Math.max(0, hourlyData.size() - 60);
-            List<MarketDataDto> last60 = hourlyData.subList(fromIndex, hourlyData.size());
+            List<MarketData> last60 = hourlyData.subList(fromIndex, hourlyData.size());
 
             logger.info("Successfully fetched {} hourly data points for {} from Yahoo Finance", last60.size(), symbol);
             return last60;

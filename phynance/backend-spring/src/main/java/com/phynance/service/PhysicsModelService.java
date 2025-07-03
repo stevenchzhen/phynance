@@ -3,6 +3,7 @@ package com.phynance.service;
 import com.phynance.model.HarmonicOscillatorRequest;
 import com.phynance.model.PhysicsModelResult;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,7 @@ public class PhysicsModelService {
      * @param request HarmonicOscillatorRequest containing OHLCV data and prediction days
      * @return PhysicsModelResult with predictions, support/resistance, and signals
      */
+    @Cacheable(value = "harmonicOscillator", key = "#request.toString()")
     public PhysicsModelResult analyze(HarmonicOscillatorRequest request) {
         if (request == null || request.getOhlcvData() == null || request.getOhlcvData().isEmpty()) {
             throw new IllegalArgumentException("OHLCV data is required");

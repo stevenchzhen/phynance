@@ -2,7 +2,7 @@ package com.phynance.service.provider;
 
 import com.google.common.util.concurrent.RateLimiter;
 import com.phynance.config.ApiProviderConfig;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -28,7 +28,7 @@ public class AlphaVantageProvider implements FinancialDataProvider {
     }
 
     @Override
-    public MarketDataDto getMarketData(String symbol) throws Exception {
+    public MarketData getMarketData(String symbol) throws Exception {
         rateLimiter.acquire();
         String url = UriComponentsBuilder.fromHttpUrl(config.getUrl())
                 .queryParam("function", "TIME_SERIES_INTRADAY")
@@ -45,7 +45,7 @@ public class AlphaVantageProvider implements FinancialDataProvider {
                 if (timeSeries == null || timeSeries.isEmpty()) throw new RuntimeException("No data from Alpha Vantage");
                 String latestKey = timeSeries.keySet().iterator().next();
                 Map<String, String> latest = (Map<String, String>) timeSeries.get(latestKey);
-                MarketDataDto dto = new MarketDataDto();
+                MarketData dto = new MarketData();
                 dto.setSymbol(symbol);
                 dto.setTimestamp(Instant.parse(latestKey.replace(" ", "T") + "Z"));
                 dto.setOpen(Double.parseDouble(latest.get("1. open")));

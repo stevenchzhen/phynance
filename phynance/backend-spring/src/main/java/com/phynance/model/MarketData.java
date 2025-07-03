@@ -1,14 +1,32 @@
 package com.phynance.model;
 
 import java.time.Instant;
+import jakarta.persistence.*;
 
-public class MarketDataDto {
+/**
+ * JPA entity for market OHLCV time series data.
+ * Partitioning strategy: partition table by month on timestamp (see migration script).
+ */
+@Entity
+@Table(name = "market_data")
+public class MarketData {
+    @Id
+    @Column(nullable = false)
     private String symbol;
+
+    @Id
+    @Column(nullable = false)
     private Instant timestamp;
+
+    @Column(nullable = false)
     private double open;
+    @Column(nullable = false)
     private double high;
+    @Column(nullable = false)
     private double low;
+    @Column(nullable = false)
     private double close;
+    @Column(nullable = false)
     private long volume;
 
     // Getters and setters

@@ -2,9 +2,10 @@ package com.phynance.service;
 
 import com.phynance.model.WavePhysicsAnalysisRequest;
 import com.phynance.model.WavePhysicsAnalysisResponse;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,17 +16,18 @@ public class WavePhysicsService {
     private FinancialDataService financialDataService;
 
     public WavePhysicsAnalysisResponse analyze(WavePhysicsAnalysisRequest request) {
-        List<MarketDataDto> data = financialDataService.getHistoricalData(
+        List<MarketData> data = financialDataService.getHistoricalData(
                 request.getSymbol(), request.getStartDate(), request.getEndDate());
         return analyze(request, data);
     }
 
-    public WavePhysicsAnalysisResponse analyze(WavePhysicsAnalysisRequest request, List<MarketDataDto> data) {
+    @Cacheable(value = "wavePhysics", key = "#request.toString().concat('-').concat(#data.hashCode().toString())")
+    public WavePhysicsAnalysisResponse analyze(WavePhysicsAnalysisRequest request, List<MarketData> data) {
         if (data == null || data.size() < 30) {
             throw new RuntimeException("Not enough historical data for wave analysis");
         }
         // Extract closing prices
-        List<Double> closes = data.stream().map(MarketDataDto::getClose).collect(Collectors.toList());
+        List<Double> closes = data.stream().map(MarketData::getClose).collect(Collectors.toList());
         int n = closes.size();
         double[] t = new double[n];
         for (int i = 0; i < n; i++) t[i] = i;

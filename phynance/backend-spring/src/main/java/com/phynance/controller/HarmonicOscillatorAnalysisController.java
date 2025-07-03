@@ -12,7 +12,7 @@ import com.phynance.service.FinancialDataService;
 import com.phynance.service.PhysicsModelService;
 import com.phynance.model.HarmonicOscillatorRequest;
 import com.phynance.model.PhysicsModelResult;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,7 +53,7 @@ public class HarmonicOscillatorAnalysisController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid symbol: " + request.getSymbol());
         }
         // Fetch historical OHLCV data
-        List<MarketDataDto> marketData = financialDataService.getHistoricalData(request.getSymbol(), request.getStartDate(), request.getEndDate());
+        List<MarketData> marketData = financialDataService.getHistoricalData(request.getSymbol(), request.getStartDate(), request.getEndDate());
         if (marketData == null || marketData.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No historical data found for symbol: " + request.getSymbol());
         }

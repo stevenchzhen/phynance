@@ -2,7 +2,7 @@ package com.phynance.service.provider;
 
 import com.google.common.util.concurrent.RateLimiter;
 import com.phynance.config.ApiProviderConfig;
-import com.phynance.model.MarketDataDto;
+import com.phynance.model.MarketData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -29,7 +29,7 @@ public class TwelveDataProvider implements FinancialDataProvider {
     }
 
     @Override
-    public MarketDataDto getMarketData(String symbol) throws Exception {
+    public MarketData getMarketData(String symbol) throws Exception {
         rateLimiter.acquire();
         String url = UriComponentsBuilder.fromHttpUrl(config.getUrl() + "/time_series")
                 .queryParam("symbol", symbol)
@@ -44,7 +44,7 @@ public class TwelveDataProvider implements FinancialDataProvider {
                 List<Map<String, String>> values = (List<Map<String, String>>) response.get("values");
                 if (values == null || values.isEmpty()) throw new RuntimeException("No data from Twelve Data");
                 Map<String, String> latest = values.get(0);
-                MarketDataDto dto = new MarketDataDto();
+                MarketData dto = new MarketData();
                 dto.setSymbol(symbol);
                 dto.setTimestamp(Instant.parse(latest.get("datetime") + "Z"));
                 dto.setOpen(Double.parseDouble(latest.get("open")));
