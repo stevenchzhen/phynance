@@ -64,11 +64,16 @@ public class PhysicsModelService {
         // 6. Support/resistance as mean ± amplitude
         List<Double> support = List.of(mean - amplitude);
         List<Double> resistance = List.of(mean + amplitude);
-        // 7. Buy/sell signals: buy if prediction > lastClose, sell if < lastClose
+        // 7. Buy/sell signals: use local changes in predicted prices to generate signals
         List<String> signals = new ArrayList<>();
-        for (double p : predictions) {
-            if (p > lastClose) signals.add("BUY");
-            else if (p < lastClose) signals.add("SELL");
+        double threshold = 0.005 * lastClose; // 0.5% of last close as noise threshold
+        signals.add("HOLD"); // First prediction has no previous value
+        for (int i = 1; i < predictions.size(); i++) {
+            double prev = predictions.get(i - 1);
+            double curr = predictions.get(i);
+            double change = curr - prev;
+            if (change > threshold) signals.add("BUY");
+            else if (change < -threshold) signals.add("SELL");
             else signals.add("HOLD");
         }
         PhysicsModelResult result = new PhysicsModelResult();

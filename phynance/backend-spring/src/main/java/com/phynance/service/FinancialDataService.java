@@ -1,59 +1,39 @@
 package com.phynance.service;
 
 import com.phynance.model.MarketDataDto;
-import com.phynance.service.provider.AlphaVantageProvider;
-import com.phynance.service.provider.TwelveDataProvider;
+import com.phynance.service.provider.YFinanceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class FinancialDataService {
-    private final AlphaVantageProvider alphaVantageProvider;
-    private final TwelveDataProvider twelveDataProvider;
-    private final DailyLimitService dailyLimitService;
+    private final YFinanceProvider yFinanceProvider;
 
     @Autowired
-    public FinancialDataService(
-        AlphaVantageProvider alphaVantageProvider,
-        TwelveDataProvider twelveDataProvider,
-        DailyLimitService dailyLimitService
-    ) {
-        this.alphaVantageProvider = alphaVantageProvider;
-        this.twelveDataProvider = twelveDataProvider;
-        this.dailyLimitService = dailyLimitService;
+    public FinancialDataService(YFinanceProvider yFinanceProvider) {
+        this.yFinanceProvider = yFinanceProvider;
     }
 
     @Cacheable("marketData")
     public MarketDataDto getMarketData(String symbol) {
-        if (dailyLimitService.canUseAlphaVantage()) {
-            try {
-                MarketDataDto dto = alphaVantageProvider.getMarketData(symbol);
-                dailyLimitService.incrementAlphaVantage();
-                return dto;
-            } catch (Exception e) {
-                // log and fall through to next provider
-            }
+        try {
+            return yFinanceProvider.getMarketData(symbol);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch market data for " + symbol + ": " + e.getMessage());
         }
-        if (dailyLimitService.canUseTwelveData()) {
-            try {
-                MarketDataDto dto = twelveDataProvider.getMarketData(symbol);
-                dailyLimitService.incrementTwelveData();
-                return dto;
-            } catch (Exception e) {
-                // log and throw if both fail
-            }
-        }
-        throw new RuntimeException("All providers failed or daily limits reached");
     }
 
     /**
-     * Fetch historical OHLCV data for a symbol and date range (mock implementation).
-     * In a real implementation, this would call an external API or database.
+     * Fetch historical OHLCV data for a symbol and date range using YFinance.
      */
-    public java.util.List<com.phynance.model.MarketDataDto> getHistoricalData(String symbol, String startDate, String endDate) {
-        // TODO: Replace with real data fetching logic
-        // For now, return an empty list or mock data
-        return java.util.Collections.emptyList();
+    public List<MarketDataDto> getHistoricalData(String symbol, String startDate, String endDate) {
+        try {
+            return yFinanceProvider.getHistoricalData(symbol, startDate, endDate);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch historical data for " + symbol + ": " + e.getMessage());
+        }
     }
 } 

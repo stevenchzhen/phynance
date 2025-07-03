@@ -97,15 +97,17 @@ public class HarmonicOscillatorAnalysisController {
         }).collect(Collectors.toList());
         resp.setAnalysis(analysisEntries);
         // Fill predictions
-        List<HarmonicOscillatorAnalysisResponse.PredictionEntry> predictionEntries = result.getPredictedPrices().stream().map((pred, idx) -> {
+        List<HarmonicOscillatorAnalysisResponse.PredictionEntry> predictionEntries = new java.util.ArrayList<>();
+        for (int idx = 0; idx < result.getPredictedPrices().size(); idx++) {
+            Double pred = result.getPredictedPrices().get(idx);
             HarmonicOscillatorAnalysisResponse.PredictionEntry p = new HarmonicOscillatorAnalysisResponse.PredictionEntry();
             p.setDate("future-day-" + (idx + 1));
             p.setPredictedPrice(pred);
             p.setSupportLevel(result.getSupportLevels().isEmpty() ? null : result.getSupportLevels().get(0));
             p.setResistanceLevel(result.getResistanceLevels().isEmpty() ? null : result.getResistanceLevels().get(0));
             p.setTrendDirection(result.getSignals().get(idx));
-            return p;
-        }).collect(Collectors.toList());
+            predictionEntries.add(p);
+        }
         resp.setPredictions(predictionEntries);
         // Fill model metrics (mocked for now)
         HarmonicOscillatorAnalysisResponse.ModelMetrics metrics = new HarmonicOscillatorAnalysisResponse.ModelMetrics();
