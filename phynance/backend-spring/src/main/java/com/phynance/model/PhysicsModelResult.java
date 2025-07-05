@@ -1,12 +1,12 @@
 package com.phynance.model;
 
-
 import java.util.List;
+import java.io.Serializable;
 
 /**
  * Result of the financial harmonic oscillator analysis.
  */
-public class PhysicsModelResult {
+public class PhysicsModelResult implements Serializable {
     /** Predicted prices for the next 5-10 trading days. */
     private List<Double> predictedPrices;
     /** Calculated support levels. */

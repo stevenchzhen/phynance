@@ -1,8 +1,9 @@
 package com.phynance.model;
 
 import java.util.List;
+import java.io.Serializable;
 
-public class WavePhysicsAnalysisResponse {
+public class WavePhysicsAnalysisResponse implements Serializable {
     private String symbol;
     private List<Double> supportLevels;
     private List<Double> resistanceLevels;

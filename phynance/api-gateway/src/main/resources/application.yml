@@ -1,0 +1,129 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: phynance-api-gateway
+
+  # Redis Configuration (disabled by default)
+  redis:
+    enabled: false
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+  # Actuator Configuration
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,metrics,prometheus,gateway
+    endpoint:
+      health:
+        show-details: always
+
+# API Provider Rate Limits Configuration
+api:
+  providers:
+    yahoo-finance:
+      name: "Yahoo Finance"
+      base-url: "https://query1.finance.yahoo.com"
+      rate-limit:
+        requests-per-hour: 2000
+        requests-per-minute: 33
+        requests-per-second: 0.56
+      circuit-breaker:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      timeout: 10s
+      priority: 1
+      enabled: true
+
+    alpha-vantage:
+      name: "Alpha Vantage"
+      base-url: "https://www.alphavantage.co"
+      rate-limit:
+        requests-per-hour: 300
+        requests-per-minute: 5
+        requests-per-second: 0.083
+      circuit-breaker:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      timeout: 15s
+      priority: 2
+      enabled: false
+
+    twelve-data:
+      name: "Twelve Data"
+      base-url: "https://api.twelvedata.com"
+      rate-limit:
+        requests-per-hour: 480
+        requests-per-minute: 8
+        requests-per-second: 0.133
+      circuit-breaker:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 45s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      timeout: 12s
+      priority: 3
+      enabled: false
+
+    polygon:
+      name: "Polygon"
+      base-url: "https://api.polygon.io"
+      rate-limit:
+        requests-per-hour: 300
+        requests-per-minute: 5
+        requests-per-second: 0.083
+      circuit-breaker:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      timeout: 15s
+      priority: 4
+      enabled: false
+
+# Queue Configuration
+queue:
+  priorities:
+    high: 1 # Physics model calculations
+    medium: 2 # User dashboard requests
+    low: 3 # Background data updates
+  max-queue-size: 1000
+  processing-threads: 4
+  dead-letter-queue:
+    max-retries: 3
+    retry-delay: 30s
+
+# Logging Configuration
+logging:
+  level:
+    com.phynance.gateway: DEBUG
+    org.springframework.web: INFO
+    io.github.resilience4j: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Metrics Configuration
+management:
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true

@@ -2,6 +2,8 @@ package com.phynance.model;
 
 import java.time.Instant;
 import jakarta.persistence.*;
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * JPA entity for market OHLCV time series data.
@@ -9,7 +11,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "market_data")
-public class MarketData {
+public class MarketData implements Serializable {
     @Id
     @Column(nullable = false)
     private String symbol;
@@ -44,4 +46,17 @@ public class MarketData {
     public void setClose(double close) { this.close = close; }
     public long getVolume() { return volume; }
     public void setVolume(long volume) { this.volume = volume; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MarketData that = (MarketData) o;
+        return Objects.equals(symbol, that.symbol) && Objects.equals(timestamp, that.timestamp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(symbol, timestamp);
+    }
 } 

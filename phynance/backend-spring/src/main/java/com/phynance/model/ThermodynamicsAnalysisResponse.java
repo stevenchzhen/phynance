@@ -1,11 +1,12 @@
 package com.phynance.model;
 
 import java.util.List;
+import java.io.Serializable;
 
 /**
  * Response for thermodynamic stock analysis.
  */
-public class ThermodynamicsAnalysisResponse {
+public class ThermodynamicsAnalysisResponse implements Serializable {
     private String symbol;
     private List<TemperatureTrend> temperatureTrends;
     private List<PhaseTransitionAlert> phaseTransitions;
@@ -23,7 +24,7 @@ public class ThermodynamicsAnalysisResponse {
     public ThermoMetrics getMetrics() { return metrics; }
     public void setMetrics(ThermoMetrics metrics) { this.metrics = metrics; }
 
-    public static class TemperatureTrend {
+    public static class TemperatureTrend implements Serializable {
         private String date;
         private Double temperature;
         public String getDate() { return date; }
@@ -31,7 +32,7 @@ public class ThermodynamicsAnalysisResponse {
         public Double getTemperature() { return temperature; }
         public void setTemperature(Double temperature) { this.temperature = temperature; }
     }
-    public static class PhaseTransitionAlert {
+    public static class PhaseTransitionAlert implements Serializable {
         private String date;
         private String type; // e.g., "BULL_TO_BEAR", "BEAR_TO_BULL"
         private String description;
@@ -42,7 +43,7 @@ public class ThermodynamicsAnalysisResponse {
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
     }
-    public static class ThermalPrediction {
+    public static class ThermalPrediction implements Serializable {
         private String date;
         private String signal; // BUY, SELL, HOLD
         private Double predictedTemperature;
@@ -56,7 +57,7 @@ public class ThermodynamicsAnalysisResponse {
         public String getComment() { return comment; }
         public void setComment(String comment) { this.comment = comment; }
     }
-    public static class ThermoMetrics {
+    public static class ThermoMetrics implements Serializable {
         private Double avgTemperature;
         private Double entropy;
         private Double heatCapacity;

@@ -1,11 +1,12 @@
 package com.phynance.model;
 
 import java.util.List;
+import java.io.Serializable;
 
 /**
  * Response for harmonic oscillator stock analysis.
  */
-public class HarmonicOscillatorAnalysisResponse {
+public class HarmonicOscillatorAnalysisResponse implements Serializable {
     private String symbol;
     private List<AnalysisEntry> analysis;
     private List<PredictionEntry> predictions;
@@ -20,7 +21,7 @@ public class HarmonicOscillatorAnalysisResponse {
     public ModelMetrics getModelMetrics() { return modelMetrics; }
     public void setModelMetrics(ModelMetrics modelMetrics) { this.modelMetrics = modelMetrics; }
 
-    public static class AnalysisEntry {
+    public static class AnalysisEntry implements Serializable {
         private String date;
         private Double actualPrice;
         private Double oscillatorValue;
@@ -44,7 +45,7 @@ public class HarmonicOscillatorAnalysisResponse {
         public void setConfidence(Double confidence) { this.confidence = confidence; }
     }
 
-    public static class PredictionEntry {
+    public static class PredictionEntry implements Serializable {
         private String date;
         private Double predictedPrice;
         private Double supportLevel;
@@ -62,7 +63,7 @@ public class HarmonicOscillatorAnalysisResponse {
         public void setTrendDirection(String trendDirection) { this.trendDirection = trendDirection; }
     }
 
-    public static class ModelMetrics {
+    public static class ModelMetrics implements Serializable {
         private Double accuracy;
         private Double correlation;
         private Double rmse;
