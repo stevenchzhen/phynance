@@ -6,6 +6,7 @@ import com.phynance.gateway.model.DataQualityResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
@@ -30,7 +31,7 @@ public class SmartRoutingService {
     
     @Autowired
     public SmartRoutingService(ApiProviderConfig apiProviderConfig, 
-                             ApiHealthMonitoringService healthMonitoringService) {
+                             @Lazy ApiHealthMonitoringService healthMonitoringService) {
         this.apiProviderConfig = apiProviderConfig;
         this.healthMonitoringService = healthMonitoringService;
         this.apiHealthMap = new ConcurrentHashMap<>();

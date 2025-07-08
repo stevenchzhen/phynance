@@ -1,30 +1,23 @@
-import axios, {
-  AxiosError,
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-} from "axios";
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // --- Token Storage Helpers (customize as needed) ---
-const getAccessToken = () => localStorage.getItem("access_token");
-const getRefreshToken = () => localStorage.getItem("refresh_token");
-const setAccessToken = (token: string) =>
-  localStorage.setItem("access_token", token);
-const setRefreshToken = (token: string) =>
-  localStorage.setItem("refresh_token", token);
+const getAccessToken = () => localStorage.getItem('access_token');
+const getRefreshToken = () => localStorage.getItem('refresh_token');
+const setAccessToken = (token: string) => localStorage.setItem('access_token', token);
+const setRefreshToken = (token: string) => localStorage.setItem('refresh_token', token);
 const clearTokens = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
 };
 
 // --- Axios Instance ---
 const api: AxiosInstance = axios.create({
-  baseURL: "http://localhost:8080/api/v1",
+  baseURL: 'http://localhost:8081/api/v1',
   timeout: 10000, // 10 seconds
   withCredentials: true, // for CORS cookies if needed
   headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
   },
 });
 
@@ -33,20 +26,15 @@ api.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
     if (token && config.headers) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     // Logging
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        "[API Request]",
-        config.method?.toUpperCase(),
-        config.url,
-        config.data || ""
-      );
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Request]', config.method?.toUpperCase(), config.url, config.data || '');
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // --- Response Interceptor: Handle Errors & Token Refresh ---
@@ -70,13 +58,8 @@ const processQueue = (error: any, token: string | null = null) => {
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     // Logging
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        "[API Response]",
-        response.config.url,
-        response.status,
-        response.data
-      );
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Response]', response.config.url, response.status, response.data);
     }
     return response;
   },
@@ -95,7 +78,7 @@ api.interceptors.response.use(
         })
           .then((token) => {
             if (originalRequest.headers && token) {
-              originalRequest.headers["Authorization"] = `Bearer ${token}`;
+              originalRequest.headers['Authorization'] = `Bearer ${token}`;
             }
             return api(originalRequest);
           })
@@ -105,15 +88,13 @@ api.interceptors.response.use(
       isRefreshing = true;
       try {
         const { data } = await axios.post(
-          "http://localhost:8080/api/v1/auth/refresh",
+          'http://localhost:8080/api/gateway/refresh',
           { refreshToken: getRefreshToken() },
-          { headers: { "Content-Type": "application/json" } }
+          { headers: { 'Content-Type': 'application/json' } },
         );
         setAccessToken(data.accessToken);
         setRefreshToken(data.refreshToken);
-        api.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${data.accessToken}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
         processQueue(null, data.accessToken);
         return api(originalRequest);
       } catch (refreshError) {
@@ -128,20 +109,17 @@ api.interceptors.response.use(
     // Handle 403/500
     if (error.response?.status === 403) {
       // Optionally redirect to forbidden page
-      console.error("Forbidden: ", error.response.data);
+      console.error('Forbidden: ', error.response.data);
     }
     if (error.response?.status === 500) {
-      console.error("Server error: ", error.response.data);
+      console.error('Server error: ', error.response.data);
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // --- Generic API Methods ---
-export const get = async <T>(
-  url: string,
-  config?: AxiosRequestConfig
-): Promise<T> => {
+export const get = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const { data } = await api.get<T>(url, config);
   return data;
 };
@@ -149,7 +127,7 @@ export const get = async <T>(
 export const post = async <T, D = unknown>(
   url: string,
   body: D,
-  config?: AxiosRequestConfig
+  config?: AxiosRequestConfig,
 ): Promise<T> => {
   const { data } = await api.post<T>(url, body, config);
   return data;
@@ -158,16 +136,13 @@ export const post = async <T, D = unknown>(
 export const put = async <T, D = unknown>(
   url: string,
   body: D,
-  config?: AxiosRequestConfig
+  config?: AxiosRequestConfig,
 ): Promise<T> => {
   const { data } = await api.put<T>(url, body, config);
   return data;
 };
 
-export const del = async <T>(
-  url: string,
-  config?: AxiosRequestConfig
-): Promise<T> => {
+export const del = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const { data } = await api.delete<T>(url, config);
   return data;
 };

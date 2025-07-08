@@ -94,6 +94,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean isAuthenticationEndpoint(String requestURI) {
         return requestURI.startsWith("/api/v1/auth/") || 
                requestURI.equals("/api/v1/auth") ||
+               requestURI.startsWith("/api/gateway/login") ||
+               requestURI.startsWith("/api/gateway/register") ||
+               requestURI.startsWith("/api/gateway/health") ||
                requestURI.startsWith("/actuator/") ||
                requestURI.equals("/error");
     }

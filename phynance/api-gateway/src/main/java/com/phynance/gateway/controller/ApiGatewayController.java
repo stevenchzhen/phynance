@@ -17,9 +17,11 @@ import com.phynance.gateway.service.AuditService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * REST Controller for API Gateway operations
@@ -34,12 +36,14 @@ public class ApiGatewayController {
     private final ApiGatewayService apiGatewayService;
     private final AuthService authService;
     private final AuditService auditService;
+    private final RestTemplate restTemplate;
     
     @Autowired
     public ApiGatewayController(ApiGatewayService apiGatewayService, AuthService authService, AuditService auditService) {
         this.apiGatewayService = apiGatewayService;
         this.authService = authService;
         this.auditService = auditService;
+        this.restTemplate = new RestTemplate();
     }
     
     /**
@@ -261,6 +265,90 @@ public class ApiGatewayController {
         var user = (com.phynance.gateway.model.User) authentication.getPrincipal();
         authService.changePassword(user.getUsername(), request);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Get market data for a symbol - routes to backend-spring
+     */
+    @GetMapping("/market-data/{symbol}")
+    public ResponseEntity<?> getMarketData(@PathVariable String symbol) {
+        log.info("Proxying market data request for symbol: {}", symbol);
+        
+        try {
+            String backendUrl = "http://localhost:8081/api/v1/market-data?symbol=" + symbol;
+            
+            // Forward request to backend-spring
+            Object response = restTemplate.getForObject(backendUrl, Object.class);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error proxying market data request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch market data: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get market summary - routes to backend-spring viewer endpoint
+     */
+    @GetMapping("/viewer/market-summary/{symbol}")
+    public ResponseEntity<?> getMarketSummary(@PathVariable String symbol) {
+        log.info("Proxying market summary request for symbol: {}", symbol);
+        
+        try {
+            String backendUrl = "http://localhost:8081/api/v1/viewer/market-summary/" + symbol;
+            
+            // Forward request to backend-spring
+            Object response = restTemplate.getForObject(backendUrl, Object.class);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error proxying market summary request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch market summary: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get harmonic oscillator analysis - routes to backend-spring
+     */
+    @PostMapping("/analysis/harmonic-oscillator")
+    public ResponseEntity<?> getHarmonicOscillatorAnalysis(@RequestBody Object analysisRequest) {
+        log.info("Proxying harmonic oscillator analysis request");
+        
+        try {
+            String backendUrl = "http://localhost:8081/api/v1/analysis/harmonic-oscillator";
+            
+            // Forward request to backend-spring
+            Object response = restTemplate.postForObject(backendUrl, analysisRequest, Object.class);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error proxying harmonic oscillator analysis request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to perform harmonic oscillator analysis: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get available symbols for viewer
+     */
+    @GetMapping("/viewer/available-symbols")
+    public ResponseEntity<?> getAvailableSymbols() {
+        log.info("Proxying available symbols request");
+        
+        try {
+            String backendUrl = "http://localhost:8081/api/v1/viewer/available-symbols";
+            
+            // Forward request to backend-spring
+            Object response = restTemplate.getForObject(backendUrl, Object.class);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error proxying available symbols request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to fetch available symbols: " + e.getMessage()));
+        }
     }
 
     private void setAuthCookies(HttpServletResponse response, AuthResponse authResponse) {

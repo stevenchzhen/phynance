@@ -16,8 +16,6 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,7 +26,7 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class AuthService implements UserDetailsService {
+public class AuthService {
     
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     
@@ -56,11 +54,7 @@ public class AuthService implements UserDetailsService {
         this.auditService = auditService;
     }
     
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-    }
+
     
     public AuthResponse login(LoginRequest request, String ipAddress, String userAgent) {
         try {

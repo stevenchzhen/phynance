@@ -1,11 +1,6 @@
-import React, { useMemo, useState } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React, { useMemo, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   ThemeProvider,
   CssBaseline,
@@ -14,13 +9,11 @@ import {
   Alert,
   CircularProgress,
   Box,
-} from "@mui/material";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import LoginForm from "./components/auth/LoginForm";
-// import { DashboardLayout } from './components/layout';
-// import your pages here
-// import DashboardPage from './pages/DashboardPage';
+} from '@mui/material';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import LoginForm from './components/auth/LoginForm';
+import DashboardPage from './pages/DashboardPage';
 // import AnalysisPage from './pages/AnalysisPage';
 // import PortfolioPage from './pages/PortfolioPage';
 // import SettingsPage from './pages/SettingsPage';
@@ -46,9 +39,7 @@ class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <Box p={4}>
-          <Alert severity="error">
-            {this.state.error?.message || "Something went wrong."}
-          </Alert>
+          <Alert severity="error">{this.state.error?.message || 'Something went wrong.'}</Alert>
         </Box>
       );
     }
@@ -61,17 +52,16 @@ const queryClient = new QueryClient();
 
 // --- Main App ---
 const App: React.FC = () => {
-  const [mode] = useState<"light" | "dark">("light");
+  const [mode] = useState<'light' | 'dark'>('light');
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error" | "info" | "warning";
-  }>({ open: false, message: "", severity: "info" });
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({ open: false, message: '', severity: 'info' });
   const [globalLoading] = useState(false);
 
   const theme = useMemo(() => createTheme({ palette: { mode } }), [mode]);
-  const handleCloseNotification = () =>
-    setNotification((n) => ({ ...n, open: false }));
+  const handleCloseNotification = () => setNotification((n) => ({ ...n, open: false }));
 
   // Example: setGlobalLoading(true/false) and setNotification({open:true, message:'...', severity:'success'}) from anywhere via context or props
 
@@ -103,28 +93,25 @@ const App: React.FC = () => {
                   open={notification.open}
                   autoHideDuration={4000}
                   onClose={handleCloseNotification}
-                  anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                 >
                   <Alert
                     onClose={handleCloseNotification}
                     severity={notification.severity}
-                    sx={{ width: "100%" }}
+                    sx={{ width: '100%' }}
                   >
                     {notification.message}
                   </Alert>
                 </Snackbar>
                 <Routes>
                   <Route path="/login" element={<LoginForm />} />
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route element={<ProtectedRoute />}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
                     {/* Example protected routes: */}
-                    {/* <Route path="/dashboard" element={<DashboardLayout><DashboardPage /></DashboardLayout>} /> */}
                     {/* <Route path="/analysis" element={<DashboardLayout><AnalysisPage /></DashboardLayout>} /> */}
                     {/* <Route path="/portfolio" element={<DashboardLayout><PortfolioPage /></DashboardLayout>} /> */}
                     {/* <Route path="/settings" element={<DashboardLayout><SettingsPage /></DashboardLayout>} /> */}
-                    <Route
-                      path="*"
-                      element={<Navigate to="/dashboard" replace />}
-                    />
                   </Route>
                 </Routes>
               </Router>

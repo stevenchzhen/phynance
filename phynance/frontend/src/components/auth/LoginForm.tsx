@@ -1,16 +1,10 @@
-import React from "react";
-import { useForm, Controller } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
-import { useAuthContext } from "../../context/AuthContext";
+import React, { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { useNavigate } from 'react-router-dom';
+import { Box, Button, TextField, Typography, Alert, CircularProgress } from '@mui/material';
+import { useAuthContext } from '../../context/AuthContext';
 
 interface LoginFormInputs {
   username: string;
@@ -18,22 +12,27 @@ interface LoginFormInputs {
 }
 
 const schema = yup.object({
-  username: yup
-    .string()
-    .email("Enter a valid email")
-    .required("Email is required"),
+  username: yup.string().email('Enter a valid email').required('Email is required'),
   password: yup
     .string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
+    .min(6, 'Password must be at least 6 characters')
+    .required('Password is required'),
 });
 
 const LoginForm: React.FC = () => {
-  const { login, loading, error } = useAuthContext();
+  const { login, loading, error, isAuthenticated } = useAuthContext();
+  const navigate = useNavigate();
   const { control, handleSubmit } = useForm<LoginFormInputs>({
     resolver: yupResolver(schema),
-    defaultValues: { username: "", password: "" },
+    defaultValues: { username: '', password: '' },
   });
+
+  // Navigate to dashboard after successful login
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const onSubmit = async (data: LoginFormInputs) => {
     await login(data.username, data.password);
@@ -43,7 +42,7 @@ const LoginForm: React.FC = () => {
     <Box
       component="form"
       onSubmit={handleSubmit(onSubmit)}
-      sx={{ maxWidth: 400, mx: "auto", mt: 8 }}
+      sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}
     >
       <Typography variant="h5" mb={2}>
         Login
@@ -57,13 +56,7 @@ const LoginForm: React.FC = () => {
         name="username"
         control={control}
         render={({ field }) => (
-          <TextField
-            {...field}
-            label="Email"
-            fullWidth
-            margin="normal"
-            autoComplete="email"
-          />
+          <TextField {...field} label="Email" fullWidth margin="normal" autoComplete="email" />
         )}
       />
       <Controller

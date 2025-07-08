@@ -43,13 +43,18 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/gateway/login", "/api/gateway/register", "/api/gateway/health").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/admin/**", "/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/analyst/**").hasAnyRole("ADMIN", "ANALYST")
                 .requestMatchers("/api/v1/trader/**").hasAnyRole("ADMIN", "ANALYST", "TRADER")
                 .requestMatchers("/api/v1/viewer/**").hasAnyRole("ADMIN", "ANALYST", "TRADER", "VIEWER")
+                .requestMatchers("/api/gateway/viewer/**").hasAnyRole("ADMIN", "ANALYST", "TRADER", "VIEWER")
+                .requestMatchers("/api/gateway/market-data/**").hasAnyRole("ADMIN", "ANALYST", "TRADER")
+                .requestMatchers("/api/gateway/analysis/**").hasAnyRole("ADMIN", "ANALYST", "TRADER")
+                .requestMatchers("/api/gateway/me").authenticated()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -58,17 +63,16 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers
-                .frameOptions().deny()
-                .contentTypeOptions().and()
+                .frameOptions(frameOptions -> frameOptions.deny())
+                .contentTypeOptions(contentTypeOptions -> {})
                 .httpStrictTransportSecurity(hstsConfig -> hstsConfig
                     .maxAgeInSeconds(31536000)
-                    .includeSubdomains(true)
+                    .includeSubDomains(true)
                 )
-                .xssProtection(xssConfig -> xssConfig
-                    .block(true)
-                )
+                .xssProtection(xssConfig -> {})
+                
                 .referrerPolicy(referrerConfig -> referrerConfig
-                    .policy("strict-origin-when-cross-origin")
+                    .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
                 .permissionsPolicy(permissionsConfig -> permissionsConfig
                     .policy("geolocation=(), microphone=(), camera=()")
