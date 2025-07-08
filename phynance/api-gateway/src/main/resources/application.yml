@@ -127,3 +127,50 @@ management:
       enabled: true
     prometheus:
       enabled: true
+
+# Performance Monitoring Configuration
+performance:
+  targets:
+    jwt-auth-ms: 50
+    admin-dashboard-ms: 2000
+    api-gateway-requests-per-hour: 1000
+  monitoring:
+    enabled: true
+    metrics-interval: 30s
+    alerting:
+      enabled: true
+      slow-jwt-threshold-ms: 50
+      slow-dashboard-threshold-ms: 2000
+      queue-overflow-threshold: 80
+      failure-rate-threshold: 90.0
+
+# Security Monitoring Configuration
+security:
+  monitoring:
+    enabled: true
+    audit-logging: true
+    jwt-performance-tracking: true
+    role-enforcement-logging: true
+    admin-action-auditing: true
+
+# Alerting Configuration
+alerting:
+  enabled: true
+  channels:
+    - type: log
+      level: WARN
+    - type: email
+      enabled: false
+      recipients: []
+    - type: webhook
+      enabled: false
+      url: ""
+  thresholds:
+    critical:
+      response-time-ms: 5000
+      failure-rate-percent: 95
+      queue-utilization-percent: 90
+    warning:
+      response-time-ms: 2000
+      failure-rate-percent: 90
+      queue-utilization-percent: 70

@@ -15,6 +15,16 @@ import com.phynance.model.PhysicsModelResult;
 import com.phynance.model.MarketData;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.phynance.service.AuditService;
+import com.phynance.service.RateLimitService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * REST controller for harmonic oscillator stock analysis.
@@ -30,14 +40,64 @@ import java.util.stream.Collectors;
 public class HarmonicOscillatorAnalysisController {
     @Autowired private FinancialDataService financialDataService;
     @Autowired private PhysicsModelService physicsModelService;
+    @Autowired private AuditService auditService;
+    @Autowired private RateLimitService rateLimitService;
+    @Value("${limits.trader.max-calculations-per-hour:10}")
+    private int traderMaxCalculationsPerHour;
 
     /**
      * Analyze a stock using the harmonic oscillator model.
-     * @param request HarmonicOscillatorAnalysisRequest
-     * @return HarmonicOscillatorAnalysisResponse
+     *
+     * VIEWER: Only default params, last 30 days, no custom predictionDays
+     * TRADER: Limited params, last 2 years, max 10 calculations/hour
+     * ANALYST: Full access
+     * ADMIN: All access
      */
     @PostMapping("/harmonic-oscillator")
+    @PreAuthorize("hasAnyRole('VIEWER','TRADER','ANALYST','ADMIN')")
+    @PostAuthorize("returnObject.statusCode.value() == 200 or returnObject.statusCode.value() == 400 or returnObject.statusCode.value() == 403")
     public ResponseEntity<?> analyze(@RequestBody HarmonicOscillatorAnalysisRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth != null ? auth.getName() : "anonymous";
+        String role = auth != null && auth.getAuthorities().size() > 0 ? auth.getAuthorities().iterator().next().getAuthority() : "UNKNOWN";
+        
+        // Get client IP for audit logging
+        String clientIp = getClientIpAddress();
+        
+        // Check rate limits
+        if (!rateLimitService.checkRateLimit("/api/v1/analysis/harmonic-oscillator")) {
+            auditService.logAccessDenied(username, "analyze", "HarmonicOscillatorAnalysisController", "Rate limit exceeded");
+            return ResponseEntity.status(429).body("Rate limit exceeded. Please try again later.");
+        }
+        
+        // Check calculation limits
+        if (!rateLimitService.checkCalculationLimit("harmonic-oscillator")) {
+            auditService.logAccessDenied(username, "analyze", "HarmonicOscillatorAnalysisController", "Calculation limit exceeded");
+            return ResponseEntity.status(429).body("Calculation limit exceeded. Please try again later.");
+        }
+        
+        auditService.logSecurityEvent(username, "HARMONIC_OSC_ANALYSIS_ATTEMPT", clientIp, null);
+
+        // Role-based restrictions
+        if (role.contains("VIEWER")) {
+            // Only allow last 30 days, default params
+            if (request.getPredictionDays() != null && request.getPredictionDays() != 5) {
+                auditService.logAccessDenied(username, "analyze", "HarmonicOscillatorAnalysisController", "VIEWER: Only default predictionDays allowed");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("VIEWER: Only default predictionDays allowed");
+            }
+            // Enforce last 30 days only
+            if (!isWithinLast30Days(request.getStartDate(), request.getEndDate())) {
+                auditService.logAccessDenied(username, "analyze", "HarmonicOscillatorAnalysisController", "VIEWER: Only last 30 days allowed");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("VIEWER: Only last 30 days of data allowed");
+            }
+        } else if (role.contains("TRADER")) {
+            // Limit to last 2 years
+            if (!isWithinLast2Years(request.getStartDate(), request.getEndDate())) {
+                auditService.logAccessDenied(username, "analyze", "HarmonicOscillatorAnalysisController", "TRADER: Only last 2 years allowed");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("TRADER: Only last 2 years of data allowed");
+            }
+        } // ANALYST/ADMIN: full access
+
         // Input validation
         if (request.getSymbol() == null || request.getSymbol().isBlank()) {
             return ResponseEntity.badRequest().body("Symbol is required");
@@ -115,6 +175,7 @@ public class HarmonicOscillatorAnalysisController {
         metrics.setCorrelation(0.8); // Placeholder
         metrics.setRmse(2.0); // Placeholder
         resp.setModelMetrics(metrics);
+        auditService.logSecurityEvent(username, "HARMONIC_OSC_ANALYSIS_SUCCESS", null, null);
         return ResponseEntity.ok(resp);
     }
 
@@ -123,5 +184,55 @@ public class HarmonicOscillatorAnalysisController {
      */
     private boolean isValidSymbol(String symbol) {
         return symbol.equalsIgnoreCase("AAPL") || symbol.equalsIgnoreCase("SPY") || symbol.equalsIgnoreCase("TSLA");
+    }
+    
+    /**
+     * Get client IP address from request
+     */
+    private String getClientIpAddress() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String xForwardedFor = request.getHeader("X-Forwarded-For");
+                if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                    return xForwardedFor.split(",")[0].trim();
+                }
+                return request.getRemoteAddr();
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the request
+        }
+        return "unknown";
+    }
+    
+    /**
+     * Check if date range is within last 30 days
+     */
+    private boolean isWithinLast30Days(String startDate, String endDate) {
+        try {
+            java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+            java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+            java.time.LocalDate thirtyDaysAgo = java.time.LocalDate.now().minusDays(30);
+            
+            return start.isAfter(thirtyDaysAgo) && end.isBefore(java.time.LocalDate.now().plusDays(1));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check if date range is within last 2 years
+     */
+    private boolean isWithinLast2Years(String startDate, String endDate) {
+        try {
+            java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+            java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+            java.time.LocalDate twoYearsAgo = java.time.LocalDate.now().minusYears(2);
+            
+            return start.isAfter(twoYearsAgo) && end.isBefore(java.time.LocalDate.now().plusDays(1));
+        } catch (Exception e) {
+            return false;
+        }
     }
 } 

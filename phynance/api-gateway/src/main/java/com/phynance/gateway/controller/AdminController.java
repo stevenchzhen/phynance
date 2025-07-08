@@ -146,12 +146,13 @@ public class AdminController {
     }
     
     /**
-     * Get system alerts and warnings
+     * Get system alerts and warnings with enhanced performance monitoring
      */
     @GetMapping("/alerts")
     public ResponseEntity<Map<String, Object>> getSystemAlerts() {
         log.info("Admin: Retrieving system alerts");
         
+        long startTime = System.currentTimeMillis();
         Map<String, Object> queueStats = queueService.getQueueStats();
         Map<String, Object> alerts = new java.util.HashMap<>();
         
@@ -182,11 +183,39 @@ public class AdminController {
             alerts.put("deadLetterQueue", deadLetterSize + " requests in dead letter queue");
         }
         
+        // Performance monitoring for admin dashboard
+        long responseTime = System.currentTimeMillis() - startTime;
+        if (responseTime > 2000) { // 2 seconds
+            alerts.put("slowAdminDashboard", "Admin dashboard load time: " + responseTime + "ms (exceeds 2s target)");
+            log.warn("Admin dashboard performance issue: {}ms response time", responseTime);
+        }
+        
+        // Check for JWT authentication performance
+        Map<String, Object> authMetrics = getAuthPerformanceMetrics();
+        double avgAuthTime = (Double) authMetrics.get("averageAuthTimeMs");
+        if (avgAuthTime > 50) {
+            alerts.put("slowJwtAuth", "JWT authentication average time: " + avgAuthTime + "ms (exceeds 50ms target)");
+        }
+        
         return ResponseEntity.ok(Map.of(
                 "alerts", alerts,
                 "alertCount", alerts.size(),
+                "responseTimeMs", responseTime,
                 "timestamp", System.currentTimeMillis()
         ));
+    }
+    
+    /**
+     * Get authentication performance metrics
+     */
+    private Map<String, Object> getAuthPerformanceMetrics() {
+        Map<String, Object> metrics = new java.util.HashMap<>();
+        // Mock metrics - in production, these would come from actual JWT service monitoring
+        metrics.put("averageAuthTimeMs", 25.0); // Target: <50ms
+        metrics.put("totalAuthRequests", 1500);
+        metrics.put("failedAuthRequests", 12);
+        metrics.put("authSuccessRate", 99.2);
+        return metrics;
     }
     
     /**

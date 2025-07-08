@@ -155,7 +155,7 @@ public class ApiHealthMonitoringService {
     }
     
     /**
-     * Record a successful API request
+     * Record a successful API request with performance timing
      */
     public void recordSuccessfulRequest(String provider, long responseTime) {
         ApiHealth health = apiHealthMap.get(provider);
@@ -168,6 +168,11 @@ public class ApiHealthMonitoringService {
             // Update counters
             hourlyRequestCounters.get(provider).incrementAndGet();
             dailyRequestCounters.get(provider).incrementAndGet();
+            
+            // Performance alerting for slow responses
+            if (responseTime > 5000) { // 5 seconds
+                log.warn("Slow API response detected for {}: {}ms", provider, responseTime);
+            }
         }
     }
     
