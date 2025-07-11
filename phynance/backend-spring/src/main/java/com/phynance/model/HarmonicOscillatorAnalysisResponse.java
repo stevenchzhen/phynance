@@ -11,6 +11,9 @@ public class HarmonicOscillatorAnalysisResponse implements Serializable {
     private List<AnalysisEntry> analysis;
     private List<PredictionEntry> predictions;
     private ModelMetrics modelMetrics;
+    private String analysisTimestamp;
+    private String dataRange;
+    private int dataPoints;
 
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
@@ -20,6 +23,12 @@ public class HarmonicOscillatorAnalysisResponse implements Serializable {
     public void setPredictions(List<PredictionEntry> predictions) { this.predictions = predictions; }
     public ModelMetrics getModelMetrics() { return modelMetrics; }
     public void setModelMetrics(ModelMetrics modelMetrics) { this.modelMetrics = modelMetrics; }
+    public String getAnalysisTimestamp() { return analysisTimestamp; }
+    public void setAnalysisTimestamp(String analysisTimestamp) { this.analysisTimestamp = analysisTimestamp; }
+    public String getDataRange() { return dataRange; }
+    public void setDataRange(String dataRange) { this.dataRange = dataRange; }
+    public int getDataPoints() { return dataPoints; }
+    public void setDataPoints(int dataPoints) { this.dataPoints = dataPoints; }
 
     public static class AnalysisEntry implements Serializable {
         private String date;

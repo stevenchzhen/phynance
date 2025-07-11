@@ -51,13 +51,14 @@ public class ThermodynamicsAnalysisService {
             // 2. Detect phase transitions (bull/bear) using critical temp
             if (i > 1) {
                 double deltaT = temp - prevTemp;
-                if (temp > 2 * average(tempTrends)) {
+                double avgTemp = average(tempTrends);
+                if (temp > 2.5 * avgTemp) {
                     ThermodynamicsAnalysisResponse.PhaseTransitionAlert alert = new ThermodynamicsAnalysisResponse.PhaseTransitionAlert();
                     alert.setDate(trend.getDate());
                     alert.setType("OVERHEAT");
                     alert.setDescription("Market temperature exceeds critical threshold: possible crash risk");
                     phaseTransitions.add(alert);
-                } else if (temp < 0.5 * average(tempTrends)) {
+                } else if (temp < 0.4 * avgTemp) {
                     ThermodynamicsAnalysisResponse.PhaseTransitionAlert alert = new ThermodynamicsAnalysisResponse.PhaseTransitionAlert();
                     alert.setDate(trend.getDate());
                     alert.setType("SUPERCOOL");
@@ -72,14 +73,15 @@ public class ThermodynamicsAnalysisService {
             prevTemp = temp;
         }
         // 3. Generate trading signals based on temperature
+        double avgTemp = average(tempTrends);
         for (ThermodynamicsAnalysisResponse.TemperatureTrend trend : tempTrends) {
             ThermodynamicsAnalysisResponse.ThermalPrediction pred = new ThermodynamicsAnalysisResponse.ThermalPrediction();
             pred.setDate(trend.getDate());
             pred.setPredictedTemperature(trend.getTemperature());
-            if (trend.getTemperature() > 2 * average(tempTrends)) {
+            if (trend.getTemperature() > 2.5 * avgTemp) {
                 pred.setSignal("SELL");
                 pred.setComment("Overheated market: potential crash");
-            } else if (trend.getTemperature() < 0.5 * average(tempTrends)) {
+            } else if (trend.getTemperature() < 0.4 * avgTemp) {
                 pred.setSignal("BUY");
                 pred.setComment("Supercooled market: potential rally");
             } else {
@@ -93,13 +95,19 @@ public class ThermodynamicsAnalysisService {
         metrics.setAvgTemperature(average(tempTrends));
         metrics.setEntropy(entropy / tempTrends.size());
         metrics.setHeatCapacity(heatCapacity / tempTrends.size());
-        // 5. Build response
+        // 5. Build response with timestamps
         ThermodynamicsAnalysisResponse resp = new ThermodynamicsAnalysisResponse();
         resp.setSymbol(request.getSymbol());
         resp.setTemperatureTrends(tempTrends);
         resp.setPhaseTransitions(phaseTransitions);
         resp.setPredictions(predictions);
         resp.setMetrics(metrics);
+        
+        // Add timestamps for verification
+        resp.setAnalysisTimestamp(java.time.LocalDateTime.now().toString());
+        resp.setDataRange(request.getStartDate() + " to " + request.getEndDate());
+        resp.setDataPoints(ohlcvData.size());
+        
         return resp;
     }
 

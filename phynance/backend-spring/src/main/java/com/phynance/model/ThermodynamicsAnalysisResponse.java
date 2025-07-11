@@ -12,6 +12,9 @@ public class ThermodynamicsAnalysisResponse implements Serializable {
     private List<PhaseTransitionAlert> phaseTransitions;
     private List<ThermalPrediction> predictions;
     private ThermoMetrics metrics;
+    private String analysisTimestamp;
+    private String dataRange;
+    private int dataPoints;
 
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
@@ -23,6 +26,12 @@ public class ThermodynamicsAnalysisResponse implements Serializable {
     public void setPredictions(List<ThermalPrediction> predictions) { this.predictions = predictions; }
     public ThermoMetrics getMetrics() { return metrics; }
     public void setMetrics(ThermoMetrics metrics) { this.metrics = metrics; }
+    public String getAnalysisTimestamp() { return analysisTimestamp; }
+    public void setAnalysisTimestamp(String analysisTimestamp) { this.analysisTimestamp = analysisTimestamp; }
+    public String getDataRange() { return dataRange; }
+    public void setDataRange(String dataRange) { this.dataRange = dataRange; }
+    public int getDataPoints() { return dataPoints; }
+    public void setDataPoints(int dataPoints) { this.dataPoints = dataPoints; }
 
     public static class TemperatureTrend implements Serializable {
         private String date;

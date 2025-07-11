@@ -1,473 +1,557 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
+  Box,
   Container,
   Typography,
-  Box,
   Grid,
   Card,
   CardContent,
-  Button,
-  Alert,
   TextField,
-  InputAdornment,
+  Button,
   Chip,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
+  Alert,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
-import { Search as SearchIcon, TrendingUp, Analytics, Science } from '@mui/icons-material';
-import { useAuthContext } from '../context/AuthContext';
-import { get } from '../api/apiClient';
+import {
+  Search as SearchIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  Analytics as AnalyticsIcon,
+  Waves as WavesIcon,
+  Thermostat as ThermostatIcon,
+  Timeline as TimelineIcon,
+} from '@mui/icons-material';
+import { useMarketData } from '../hooks/useMarketData';
+import api from '../api/apiClient';
 
-// Types
-interface MarketData {
+interface PhysicsAnalysisResult {
   symbol: string;
+  analysisType: string;
+  dataRange: string;
+  predictionDays: number;
   currentPrice: number;
-  change: number;
-  changePercent: number;
-  periodHigh: number;
-  periodLow: number;
-  volume?: number;
-  timestamp?: string;
+  predictedPrices: number[];
+  signals: string[];
+  supportLevel: number;
+  resistanceLevel: number;
+  message: string;
 }
 
-interface PhysicsModel {
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  endpoint: string;
-  requiresAuth: boolean;
+interface WavePhysicsResult {
+  symbol: string;
+  supportLevels: number[];
+  resistanceLevels: number[];
+  nodeLevels: number[];
+  amplitudes: number[];
+  tradingSignals: string[];
+  predictedLevels: number[];
+  explanation: string;
+}
+
+interface ThermodynamicsResult {
+  symbol: string;
+  temperatureTrends: Array<{
+    date: string;
+    temperature: number;
+  }>;
+  phaseTransitions: Array<{
+    date: string;
+    type: string;
+    description: string;
+  }>;
+  predictions: Array<{
+    date: string;
+    predictedTemperature: number;
+    signal: string;
+    comment: string;
+  }>;
+  metrics: {
+    avgTemperature: number;
+    entropy: number;
+    heatCapacity: number;
+  };
 }
 
 const DashboardPage: React.FC = () => {
-  const { user, logout } = useAuthContext();
-  const [symbol, setSymbol] = useState('AAPL');
-  const [marketData, setMarketData] = useState<MarketData | null>(null);
-  const [availableSymbols, setAvailableSymbols] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [physicsAnalysis, setPhysicsAnalysis] = useState<any | null>(null);
-  const [physicsLoading, setPhysicsLoading] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('AAPL');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [advancedMode, setAdvancedMode] = useState<boolean>(false);
+
+  // Physics analysis states
+  const [physicsAnalysis, setPhysicsAnalysis] = useState<PhysicsAnalysisResult | null>(null);
+  const [wavePhysicsAnalysis, setWavePhysicsAnalysis] = useState<WavePhysicsResult | null>(null);
+  const [thermodynamicsAnalysis, setThermodynamicsAnalysis] = useState<ThermodynamicsResult | null>(
+    null,
+  );
+
+  // Loading states
+  const [physicsLoading, setPhysicsLoading] = useState<boolean>(false);
+  const [wavePhysicsLoading, setWavePhysicsLoading] = useState<boolean>(false);
+  const [thermodynamicsLoading, setThermodynamicsLoading] = useState<boolean>(false);
+
+  // Error states
   const [physicsError, setPhysicsError] = useState<string | null>(null);
+  const [wavePhysicsError, setWavePhysicsError] = useState<string | null>(null);
+  const [thermodynamicsError, setThermodynamicsError] = useState<string | null>(null);
 
-  // Physics models available
-  const physicsModels: PhysicsModel[] = [
-    {
-      name: 'Harmonic Oscillator',
-      description: 'Predicts price reversals using damped oscillation patterns',
-      icon: <Science color="primary" />,
-      endpoint: '/gateway/analysis/harmonic-oscillator',
-      requiresAuth: true,
-    },
-    {
-      name: 'Market Temperature',
-      description: 'Thermodynamic analysis of market volatility and regime changes',
-      icon: <Analytics color="secondary" />,
-      endpoint: '/gateway/analysis/thermodynamics',
-      requiresAuth: true,
-    },
-    {
-      name: 'Wave Interference',
-      description: 'Support/resistance levels through wave physics principles',
-      icon: <TrendingUp color="success" />,
-      endpoint: '/gateway/analysis/wave-physics',
-      requiresAuth: true,
-    },
-  ];
+  const { data: marketData, isLoading: loading, error } = useMarketData(selectedSymbol);
+  // marketData is now the direct response from /viewer/market-summary
 
-  // Load available symbols on component mount
-  useEffect(() => {
-    const loadAvailableSymbols = async () => {
-      try {
-        const response = await get<{ symbols: string[] }>('/viewer/available-symbols');
-        setAvailableSymbols(response.symbols);
-      } catch (error) {
-        console.error('Failed to load available symbols:', error);
-        // Fallback to default symbols
-        setAvailableSymbols(['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN']);
-      }
-    };
+  const popularSymbols = ['AAPL', 'SPY', 'TSLA', 'MSFT', 'GOOGL'];
 
-    loadAvailableSymbols();
-  }, []);
-
-  // Load market data for selected symbol
-  const loadMarketData = async (selectedSymbol: string) => {
-    if (!selectedSymbol) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await get<MarketData>(`/viewer/market-summary/${selectedSymbol}`);
-      setMarketData(response);
-    } catch (error) {
-      console.error('Failed to load market data:', error);
-      setError('Failed to load market data for ' + selectedSymbol);
-    } finally {
-      setLoading(false);
+  const handleSymbolSearch = () => {
+    if (searchTerm.trim()) {
+      setSelectedSymbol(searchTerm.trim().toUpperCase());
+      setSearchTerm('');
     }
   };
 
-  // Load physics analysis for selected symbol
-  const handlePhysicsAnalysis = async (selectedSymbol: string) => {
+  const handleSymbolSelect = (symbol: string) => {
+    setSelectedSymbol(symbol);
+  };
+
+  // Analysis type change handler removed as it's not used
+
+  const handlePhysicsAnalysis = async () => {
     if (!selectedSymbol) return;
 
     setPhysicsLoading(true);
     setPhysicsError(null);
 
     try {
-      const response = await get<any>(`/viewer/harmonic-oscillator/${selectedSymbol}`);
-      setPhysicsAnalysis(response);
-    } catch (error) {
-      console.error('Failed to load physics analysis:', error);
-      setPhysicsError('Failed to load physics analysis for ' + selectedSymbol);
+      const response = await api.get(`/viewer/harmonic-oscillator/${selectedSymbol}`);
+      setPhysicsAnalysis(response.data);
+    } catch (err: any) {
+      setPhysicsError(err.response?.data?.message || 'Failed to fetch physics analysis');
     } finally {
       setPhysicsLoading(false);
     }
   };
 
-  // Load initial data
-  useEffect(() => {
-    loadMarketData(symbol);
-  }, [symbol]);
+  const handleWavePhysicsAnalysis = async () => {
+    if (!selectedSymbol) return;
 
-  // Handle search
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      setSymbol(searchTerm.toUpperCase());
-      setSearchTerm('');
+    setWavePhysicsLoading(true);
+    setWavePhysicsError(null);
+
+    try {
+      const requestData = {
+        symbol: selectedSymbol,
+        startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 90 days ago
+        endDate: new Date().toISOString().split('T')[0], // today
+        predictionWeeks: 2,
+      };
+
+      const response = await api.post('/analysis/wave-physics', requestData);
+      setWavePhysicsAnalysis(response.data);
+    } catch (err: any) {
+      setWavePhysicsError(err.response?.data?.message || 'Failed to fetch wave physics analysis');
+    } finally {
+      setWavePhysicsLoading(false);
     }
   };
 
-  // Handle symbol selection from popular symbols
-  const handleSymbolSelect = (selectedSymbol: string) => {
-    setSymbol(selectedSymbol);
+  const handleThermodynamicsAnalysis = async () => {
+    if (!selectedSymbol) return;
+
+    setThermodynamicsLoading(true);
+    setThermodynamicsError(null);
+
+    try {
+      const requestData = {
+        symbol: selectedSymbol,
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
+        endDate: new Date().toISOString().split('T')[0], // today
+      };
+
+      const response = await api.post('/analysis/thermodynamics', requestData);
+      setThermodynamicsAnalysis(response.data);
+    } catch (err: any) {
+      setThermodynamicsError(
+        err.response?.data?.message || 'Failed to fetch thermodynamics analysis',
+      );
+    } finally {
+      setThermodynamicsLoading(false);
+    }
   };
 
-  // Handle logout
-  const handleLogout = async () => {
-    await logout();
+  const getSignalColor = (signal: string) => {
+    switch (signal?.toUpperCase()) {
+      case 'BUY':
+        return 'success';
+      case 'SELL':
+        return 'error';
+      case 'HOLD':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
+  const getSignalIcon = (signal: string) => {
+    switch (signal?.toUpperCase()) {
+      case 'BUY':
+        return <TrendingUpIcon />;
+      case 'SELL':
+        return <TrendingDownIcon />;
+      default:
+        return <AnalyticsIcon />;
+    }
   };
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Physics Finance Dashboard
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Welcome back, {user?.username}!
-          </Typography>
-        </Box>
-        <Button variant="outlined" color="secondary" onClick={handleLogout}>
-          Logout
-        </Button>
-      </Box>
+      <Typography variant="h3" component="h1" gutterBottom>
+        Physics-Based Financial Analytics
+      </Typography>
 
-      {/* Search Bar */}
+      {/* Controls */}
       <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Box display="flex" alignItems="center" gap={2}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search for a stock symbol (e.g., AAPL, GOOGL)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button variant="contained" onClick={handleSearch} disabled={!searchTerm.trim()}>
-              Search
-            </Button>
-          </Box>
-
-          {/* Popular Symbols */}
-          <Box mt={2}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Popular Symbols:
-            </Typography>
-            <Box display="flex" flexWrap="wrap" gap={1}>
-              {availableSymbols.map((sym) => (
-                <Chip
-                  key={sym}
-                  label={sym}
-                  variant={symbol === sym ? 'filled' : 'outlined'}
-                  color={symbol === sym ? 'primary' : 'default'}
-                  onClick={() => handleSymbolSelect(sym)}
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  label="Symbol"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSymbolSearch()}
                   size="small"
+                  sx={{ flexGrow: 1 }}
                 />
-              ))}
-            </Box>
-          </Box>
+                <Button
+                  variant="contained"
+                  onClick={handleSymbolSearch}
+                  startIcon={<SearchIcon />}
+                  size="small"
+                >
+                  Search
+                </Button>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Typography variant="body2" color="text.secondary">
+                Popular Symbols:
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                {popularSymbols.map((symbol) => (
+                  <Chip
+                    key={symbol}
+                    label={symbol}
+                    variant={selectedSymbol === symbol ? 'filled' : 'outlined'}
+                    onClick={() => handleSymbolSelect(symbol)}
+                    size="small"
+                  />
+                ))}
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={advancedMode}
+                    onChange={(e) => setAdvancedMode(e.target.checked)}
+                  />
+                }
+                label="Advanced Physics Models"
+              />
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
 
-      {/* Error Display */}
-      {error && (
+      {/* Market Data */}
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
         <Alert severity="error" sx={{ mb: 4 }}>
-          {error}
+          {error.message || 'An error occurred'}
         </Alert>
-      )}
+      ) : marketData ? (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h5" component="h2" gutterBottom>
+              {selectedSymbol} Market Data
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Current Price
+                </Typography>
+                <Typography variant="h4" color="primary">
+                  ${marketData.close?.toFixed(2)}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  High
+                </Typography>
+                <Typography variant="h5" color="success.main">
+                  ${marketData.high?.toFixed(2)}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Low
+                </Typography>
+                <Typography variant="h5" color="error.main">
+                  ${marketData.low?.toFixed(2)}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Volume
+                </Typography>
+                <Typography variant="h5">{marketData.volume?.toLocaleString()}</Typography>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <Grid container spacing={4}>
-        {/* Market Data Panel */}
-        <Grid item xs={12} md={6}>
+      {/* Physics Analysis */}
+      <Grid container spacing={3}>
+        {/* Harmonic Oscillator */}
+        <Grid item xs={12} lg={4}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Market Data - {symbol}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <TimelineIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">Harmonic Oscillator</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Damped harmonic oscillator model for price predictions
               </Typography>
+              <Button
+                variant="contained"
+                onClick={handlePhysicsAnalysis}
+                disabled={physicsLoading || !selectedSymbol}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                {physicsLoading ? <CircularProgress size={20} /> : 'Analyze'}
+              </Button>
 
-              {loading ? (
-                <Box display="flex" justifyContent="center" py={4}>
-                  <CircularProgress />
-                </Box>
-              ) : marketData ? (
-                <TableContainer>
-                  <Table size="small">
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <strong>Symbol</strong>
-                        </TableCell>
-                        <TableCell>{marketData.symbol}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <strong>Current Price</strong>
-                        </TableCell>
-                        <TableCell>${marketData.currentPrice.toFixed(2)}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <strong>Change</strong>
-                        </TableCell>
-                        <TableCell style={{ color: marketData.change >= 0 ? 'green' : 'red' }}>
-                          {marketData.change >= 0 ? '+' : ''}${marketData.change.toFixed(2)} (
-                          {marketData.changePercent.toFixed(2)}%)
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <strong>Period High</strong>
-                        </TableCell>
-                        <TableCell>${marketData.periodHigh.toFixed(2)}</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <strong>Period Low</strong>
-                        </TableCell>
-                        <TableCell>${marketData.periodLow.toFixed(2)}</TableCell>
-                      </TableRow>
-                      {marketData.volume && (
-                        <TableRow>
-                          <TableCell>
-                            <strong>Volume</strong>
-                          </TableCell>
-                          <TableCell>{marketData.volume.toLocaleString()}</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No market data available
-                </Typography>
+              {physicsError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {physicsError}
+                </Alert>
               )}
 
-              <Box mt={2}>
-                <Button
-                  variant="outlined"
-                  onClick={() => loadMarketData(symbol)}
-                  disabled={loading}
-                  fullWidth
-                >
-                  Refresh Data
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+              {physicsAnalysis && (
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Analysis Results
+                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Support Level: ${physicsAnalysis.supportLevel?.toFixed(2)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Resistance Level: ${physicsAnalysis.resistanceLevel?.toFixed(2)}
+                    </Typography>
+                  </Box>
 
-        {/* Physics Models Panel */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Physics-Based Analysis Models
-              </Typography>
-
-              <Box display="flex" flexDirection="column" gap={2}>
-                {physicsModels.map((model) => (
-                  <Paper key={model.name} elevation={1} sx={{ p: 2 }}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      {model.icon}
-                      <Box flex={1}>
-                        <Typography variant="subtitle1" fontWeight="bold">
-                          {model.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {model.description}
-                        </Typography>
-                      </Box>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        disabled={
-                          !marketData || (model.name === 'Harmonic Oscillator' && physicsLoading)
-                        }
-                        onClick={() => {
-                          if (model.name === 'Harmonic Oscillator') {
-                            handlePhysicsAnalysis(symbol);
-                          } else {
-                            alert(
-                              `${
-                                model.name
-                              } analysis coming soon! Will analyze ${symbol} using ${model.name.toLowerCase()} physics model.`,
-                            );
+                  <Typography variant="subtitle2" gutterBottom>
+                    5-Day Predictions
+                  </Typography>
+                  <List dense>
+                    {physicsAnalysis.predictedPrices?.map((price, index) => (
+                      <ListItem key={index} sx={{ px: 0 }}>
+                        <ListItemIcon>{getSignalIcon(physicsAnalysis.signals[index])}</ListItemIcon>
+                        <ListItemText
+                          primary={`Day ${index + 1}: $${price.toFixed(2)}`}
+                          secondary={
+                            <Chip
+                              label={physicsAnalysis.signals[index]}
+                              color={getSignalColor(physicsAnalysis.signals[index])}
+                              size="small"
+                            />
                           }
-                        }}
-                      >
-                        {model.name === 'Harmonic Oscillator' && physicsLoading
-                          ? 'Analyzing...'
-                          : 'Analyze'}
-                      </Button>
-                    </Box>
-                  </Paper>
-                ))}
-              </Box>
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Paper>
+              )}
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Physics Analysis Results Panel */}
-        {physicsAnalysis && (
-          <Grid item xs={12}>
+        {/* Wave Physics */}
+        {advancedMode && (
+          <Grid item xs={12} lg={4}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Physics Analysis Results - {physicsAnalysis.symbol}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <WavesIcon sx={{ mr: 1 }} />
+                  <Typography variant="h6">Wave Physics</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Wave interference patterns and cycle analysis
                 </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleWavePhysicsAnalysis}
+                  disabled={wavePhysicsLoading || !selectedSymbol}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  {wavePhysicsLoading ? <CircularProgress size={20} /> : 'Analyze Waves'}
+                </Button>
 
-                {physicsError && (
+                {wavePhysicsError && (
                   <Alert severity="error" sx={{ mb: 2 }}>
-                    {physicsError}
+                    {wavePhysicsError}
                   </Alert>
                 )}
 
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <Paper elevation={1} sx={{ p: 2 }}>
-                      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                        Support & Resistance Levels
+                {wavePhysicsAnalysis && (
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Wave Analysis Results
+                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Support Levels: {wavePhysicsAnalysis.supportLevels?.length || 0}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Support: ${physicsAnalysis.supportLevel?.toFixed(2) || 'N/A'}
+                        Resistance Levels: {wavePhysicsAnalysis.resistanceLevels?.length || 0}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Resistance: ${physicsAnalysis.resistanceLevel?.toFixed(2) || 'N/A'}
+                        Node Levels: {wavePhysicsAnalysis.nodeLevels?.length || 0}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Current: ${physicsAnalysis.currentPrice?.toFixed(2) || 'N/A'}
-                      </Typography>
-                    </Paper>
-                  </Grid>
+                    </Box>
 
-                  <Grid item xs={12} md={6}>
-                    <Paper elevation={1} sx={{ p: 2 }}>
-                      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                        Predicted Prices (Next 5 Days)
-                      </Typography>
-                      {physicsAnalysis.predictedPrices?.map((price: number, index: number) => (
-                        <Typography key={index} variant="body2" color="text.secondary">
-                          Day {index + 1}: ${price.toFixed(2)}
-                        </Typography>
-                      ))}
-                    </Paper>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Paper elevation={1} sx={{ p: 2 }}>
-                      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                        Trading Signals
-                      </Typography>
-                      <Box display="flex" flexWrap="wrap" gap={1}>
-                        {physicsAnalysis.signals?.map((signal: string, index: number) => (
-                          <Chip
-                            key={index}
-                            label={`Day ${index + 1}: ${signal}`}
-                            color={
-                              signal === 'BUY' ? 'success' : signal === 'SELL' ? 'error' : 'default'
+                    <Typography variant="subtitle2" gutterBottom>
+                      Wave Amplitudes
+                    </Typography>
+                    <List dense>
+                      {wavePhysicsAnalysis.amplitudes?.map((amplitude, index) => (
+                        <ListItem key={index} sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={`Wave ${index + 1}: ${amplitude.toFixed(4)}`}
+                            secondary={
+                              index === 0 ? 'Short-term' : index === 1 ? 'Medium-term' : 'Long-term'
                             }
-                            size="small"
                           />
-                        ))}
-                      </Box>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                        </ListItem>
+                      ))}
+                    </List>
 
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  {physicsAnalysis.message}
-                </Typography>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Recent Signals
+                    </Typography>
+                    <List dense>
+                      {wavePhysicsAnalysis.tradingSignals?.slice(-3).map((signal, index) => (
+                        <ListItem key={index} sx={{ px: 0 }}>
+                          <ListItemText primary={signal} secondary={`Signal ${index + 1}`} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Paper>
+                )}
               </CardContent>
             </Card>
           </Grid>
         )}
 
-        {/* System Status Panel */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                System Status
-              </Typography>
+        {/* Thermodynamics */}
+        {advancedMode && (
+          <Grid item xs={12} lg={4}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <ThermostatIcon sx={{ mr: 1 }} />
+                  <Typography variant="h6">Thermodynamics</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Market temperature and phase transition analysis
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleThermodynamicsAnalysis}
+                  disabled={thermodynamicsLoading || !selectedSymbol}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  {thermodynamicsLoading ? <CircularProgress size={20} /> : 'Analyze Temperature'}
+                </Button>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" color="primary">
-                      ✓
+                {thermodynamicsError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {thermodynamicsError}
+                  </Alert>
+                )}
+
+                {thermodynamicsAnalysis && (
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Thermodynamic Analysis
                     </Typography>
-                    <Typography variant="body2">API Gateway Connected</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" color="success.main">
-                      ✓
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Avg Temperature:{' '}
+                        {thermodynamicsAnalysis.metrics?.avgTemperature?.toFixed(2)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Entropy: {thermodynamicsAnalysis.metrics?.entropy?.toFixed(4)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Heat Capacity: {thermodynamicsAnalysis.metrics?.heatCapacity?.toFixed(2)}
+                      </Typography>
+                    </Box>
+
+                    <Typography variant="subtitle2" gutterBottom>
+                      Phase Transitions
                     </Typography>
-                    <Typography variant="body2">Market Data Service</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" color="warning.main">
-                      ⚡
+                    <List dense>
+                      {thermodynamicsAnalysis.phaseTransitions?.map((transition, index) => (
+                        <ListItem key={index} sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={transition.type}
+                            secondary={transition.description}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+
+                    <Typography variant="subtitle2" gutterBottom>
+                      Recent Predictions
                     </Typography>
-                    <Typography variant="body2">Physics Models Ready</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
+                    <List dense>
+                      {thermodynamicsAnalysis.predictions?.slice(-3).map((prediction, index) => (
+                        <ListItem key={index} sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={
+                              <Chip
+                                label={prediction.signal}
+                                color={getSignalColor(prediction.signal)}
+                                size="small"
+                              />
+                            }
+                            secondary={prediction.comment}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Paper>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
     </Container>
   );

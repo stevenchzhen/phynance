@@ -23,8 +23,8 @@ public class WavePhysicsService {
 
     @Cacheable(value = "wavePhysics", key = "#request.toString().concat('-').concat(#data.hashCode().toString())")
     public WavePhysicsAnalysisResponse analyze(WavePhysicsAnalysisRequest request, List<MarketData> data) {
-        if (data == null || data.size() < 30) {
-            throw new RuntimeException("Not enough historical data for wave analysis");
+        if (data == null || data.size() < 10) {
+            throw new RuntimeException("Not enough historical data for wave analysis (minimum 10 data points required)");
         }
         // Extract closing prices
         List<Double> closes = data.stream().map(MarketData::getClose).collect(Collectors.toList());
@@ -83,24 +83,38 @@ public class WavePhysicsService {
             }
         }
 
-        // Trading signals
+        // Trading signals based on wave patterns and price trends
         List<String> tradingSignals = new ArrayList<>();
+        double priceChange = closes.get(n-1) - closes.get(0); // Overall price trend
+        double avgWave = totalWave.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double maxAmplitude = Arrays.stream(A).max().orElse(0.1);
+        
         for (int i = 1; i < n; i++) {
             double prev = totalWave.get(i - 1);
             double curr = totalWave.get(i);
-            if (curr > 0 && prev <= 0) {
-                tradingSignals.add("Reversal Up (Constructive Interference)");
-            } else if (curr < 0 && prev >= 0) {
-                tradingSignals.add("Reversal Down (Destructive Interference)");
+            double priceNow = closes.get(i);
+            double pricePrev = closes.get(i - 1);
+            double waveDelta = curr - prev;
+            
+            // Consider both wave interference and actual price movement
+            if (curr > 0.3 * maxAmplitude && waveDelta > 0.1 * maxAmplitude) {
+                tradingSignals.add("BUY");
+            } else if (curr < -0.3 * maxAmplitude && waveDelta < -0.1 * maxAmplitude) {
+                tradingSignals.add("SELL");  
+            } else if (Math.abs(waveDelta) < 0.05 * maxAmplitude) {
+                tradingSignals.add("HOLD");
+            } else if (priceNow > pricePrev && curr > prev) {
+                tradingSignals.add("BUY");
+            } else if (priceNow < pricePrev && curr < prev) {
+                tradingSignals.add("SELL");
             } else {
-                tradingSignals.add("Hold");
+                tradingSignals.add("HOLD");
             }
         }
 
         // Predict future levels (1-4 weeks) - make predictions relative to current price
         List<Double> predictedLevels = new ArrayList<>();
         double currentPrice = closes.get(n - 1);
-        double maxAmplitude = Arrays.stream(A).max().orElse(0.1);
         
         for (int k = 1; k <= request.getPredictionWeeks() * 5; k++) {
             double tFuture = n + k;
@@ -133,7 +147,7 @@ public class WavePhysicsService {
         explanation.append("- Amplitudes represent volatility; higher amplitude means greater price swings.\n");
         explanation.append("- This approach translates wave physics (interference, nodes, amplitude) to financial price behavior, helping identify key levels and timing.\n");
 
-        // Build response
+        // Build response with timestamps
         WavePhysicsAnalysisResponse resp = new WavePhysicsAnalysisResponse();
         resp.setSymbol(request.getSymbol());
         resp.setSupportLevels(supportLevels);
@@ -143,6 +157,12 @@ public class WavePhysicsService {
         resp.setTradingSignals(tradingSignals);
         resp.setPredictedLevels(predictedLevels);
         resp.setExplanation(explanation.toString());
+        
+        // Add timestamps for verification
+        resp.setAnalysisTimestamp(java.time.LocalDateTime.now().toString());
+        resp.setDataRange(request.getStartDate() + " to " + request.getEndDate());
+        resp.setDataPoints(data.size());
+        
         return resp;
     }
 } 

@@ -92,19 +92,22 @@ public class ViewerController {
             
             PhysicsModelResult result = physicsModelService.analyze(oscRequest);
             
-            // Create simplified response for VIEWER
-            var response = Map.of(
-                "symbol", symbol,
-                "analysisType", "Basic Harmonic Oscillator",
-                "dataRange", "Last 30 days",
-                "predictionDays", 5,
-                "currentPrice", marketData.get(marketData.size() - 1).getClose(),
-                "predictedPrices", result.getPredictedPrices(),
-                "signals", result.getSignals(),
-                "supportLevel", result.getSupportLevels().isEmpty() ? null : result.getSupportLevels().get(0),
-                "resistanceLevel", result.getResistanceLevels().isEmpty() ? null : result.getResistanceLevels().get(0),
-                "message", "Basic analysis with default parameters. Upgrade to TRADER+ for custom parameters."
-            );
+            // Create simplified response for VIEWER with timestamps
+            var response = new java.util.HashMap<String, Object>();
+            response.put("symbol", symbol);
+            response.put("analysisType", "Basic Harmonic Oscillator");
+            response.put("dataRange", "Last 30 days");
+            response.put("predictionDays", 5);
+            response.put("currentPrice", marketData.get(marketData.size() - 1).getClose());
+            response.put("predictedPrices", result.getPredictedPrices());
+            response.put("signals", result.getSignals());
+            response.put("supportLevel", result.getSupportLevels().isEmpty() ? null : result.getSupportLevels().get(0));
+            response.put("resistanceLevel", result.getResistanceLevels().isEmpty() ? null : result.getResistanceLevels().get(0));
+            response.put("analysisTimestamp", java.time.LocalDateTime.now().toString());
+            response.put("dataStartDate", startDate.toString());
+            response.put("dataEndDate", endDate.toString());
+            response.put("dataPoints", marketData.size());
+            response.put("message", "Basic analysis with default parameters. Upgrade to TRADER+ for custom parameters.");
             
             auditService.logMethodAccess(username, "getBasicHarmonicOscillator", "ViewerController", "SUCCESS");
             return ResponseEntity.ok(response);

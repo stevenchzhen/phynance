@@ -12,6 +12,9 @@ public class WavePhysicsAnalysisResponse implements Serializable {
     private List<String> tradingSignals;
     private List<Double> predictedLevels;
     private String explanation;
+    private String analysisTimestamp;
+    private String dataRange;
+    private int dataPoints;
 
     public String getSymbol() { return symbol; }
     public void setSymbol(String symbol) { this.symbol = symbol; }
@@ -29,4 +32,10 @@ public class WavePhysicsAnalysisResponse implements Serializable {
     public void setPredictedLevels(List<Double> predictedLevels) { this.predictedLevels = predictedLevels; }
     public String getExplanation() { return explanation; }
     public void setExplanation(String explanation) { this.explanation = explanation; }
+    public String getAnalysisTimestamp() { return analysisTimestamp; }
+    public void setAnalysisTimestamp(String analysisTimestamp) { this.analysisTimestamp = analysisTimestamp; }
+    public String getDataRange() { return dataRange; }
+    public void setDataRange(String dataRange) { this.dataRange = dataRange; }
+    public int getDataPoints() { return dataPoints; }
+    public void setDataPoints(int dataPoints) { this.dataPoints = dataPoints; }
 } 
