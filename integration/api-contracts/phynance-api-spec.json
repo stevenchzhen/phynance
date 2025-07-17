@@ -1,0 +1,326 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Phynance Physics-Based Financial Analysis API",
+    "version": "1.0.0",
+    "description": "API for physics-based stock market analysis"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/api/v1/viewer/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "Service status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": {
+                      "type": "string",
+                      "example": "Backend-Spring"
+                    },
+                    "status": { "type": "string", "example": "UP" },
+                    "timestamp": { "type": "number", "example": 1703123456789 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/viewer/market-summary/{symbol}": {
+      "get": {
+        "summary": "Get market summary for a stock symbol",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "example": "AAPL" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Market summary data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbol": { "type": "string", "example": "AAPL" },
+                    "currentPrice": { "type": "number", "example": 150.25 },
+                    "change": { "type": "number", "example": 2.15 },
+                    "changePercent": { "type": "number", "example": 1.45 },
+                    "periodHigh": { "type": "number", "example": 155.0 },
+                    "periodLow": { "type": "number", "example": 145.0 },
+                    "dataPoints": { "type": "integer", "example": 30 },
+                    "dataRange": { "type": "string", "example": "Last 30 days" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/harmonic-oscillator": {
+      "post": {
+        "summary": "Analyze stock using harmonic oscillator model",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "symbol": { "type": "string", "example": "AAPL" },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2024-01-01"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2024-01-31"
+                  }
+                },
+                "required": ["symbol"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Harmonic oscillator analysis results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbol": { "type": "string", "example": "AAPL" },
+                    "amplitude": { "type": "number", "example": 5.23 },
+                    "frequency": { "type": "number", "example": 0.15 },
+                    "damping": { "type": "number", "example": 0.02 },
+                    "phase": { "type": "number", "example": 1.57 },
+                    "predictions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": { "type": "string", "format": "date" },
+                          "predictedPrice": { "type": "number" }
+                        }
+                      }
+                    },
+                    "supportLevels": {
+                      "type": "array",
+                      "items": { "type": "number" }
+                    },
+                    "resistanceLevels": {
+                      "type": "array",
+                      "items": { "type": "number" }
+                    },
+                    "tradingSignal": {
+                      "type": "string",
+                      "enum": ["BUY", "SELL", "HOLD"]
+                    },
+                    "confidence": { "type": "number", "example": 0.78 },
+                    "analysisTimestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "dataStartDate": { "type": "string", "format": "date" },
+                    "dataEndDate": { "type": "string", "format": "date" },
+                    "dataPoints": { "type": "integer", "example": 30 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/wave-physics": {
+      "post": {
+        "summary": "Analyze stock using wave physics model",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "symbol": { "type": "string", "example": "AAPL" }
+                },
+                "required": ["symbol"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wave physics analysis results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbol": { "type": "string", "example": "AAPL" },
+                    "waveComponents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "amplitude": { "type": "number" },
+                          "frequency": { "type": "number" },
+                          "phase": { "type": "number" },
+                          "period": { "type": "string" }
+                        }
+                      }
+                    },
+                    "interferencePattern": {
+                      "type": "string",
+                      "enum": ["CONSTRUCTIVE", "DESTRUCTIVE", "MIXED"]
+                    },
+                    "predictions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": { "type": "string", "format": "date" },
+                          "predictedPrice": { "type": "number" }
+                        }
+                      }
+                    },
+                    "tradingSignal": {
+                      "type": "string",
+                      "enum": ["BUY", "SELL", "HOLD"]
+                    },
+                    "confidence": { "type": "number", "example": 0.82 },
+                    "analysisTimestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "dataStartDate": { "type": "string", "format": "date" },
+                    "dataEndDate": { "type": "string", "format": "date" },
+                    "dataPoints": { "type": "integer", "example": 21 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analysis/thermodynamics": {
+      "post": {
+        "summary": "Analyze stock using thermodynamics model",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "symbol": { "type": "string", "example": "AAPL" },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2024-01-01"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2024-01-31"
+                  }
+                },
+                "required": ["symbol", "startDate", "endDate"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thermodynamics analysis results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbol": { "type": "string", "example": "AAPL" },
+                    "temperature": { "type": "number", "example": 2.45 },
+                    "phaseState": {
+                      "type": "string",
+                      "enum": ["OVERHEAT", "SUPERCOOL", "NORMAL"]
+                    },
+                    "entropy": { "type": "number", "example": 1.23 },
+                    "heatCapacity": { "type": "number", "example": 0.89 },
+                    "tradingSignal": {
+                      "type": "string",
+                      "enum": ["BUY", "SELL", "HOLD"]
+                    },
+                    "confidence": { "type": "number", "example": 0.75 },
+                    "analysisTimestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "dataStartDate": { "type": "string", "format": "date" },
+                    "dataEndDate": { "type": "string", "format": "date" },
+                    "dataPoints": { "type": "integer", "example": 30 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/viewer/available-symbols": {
+      "get": {
+        "summary": "Get list of available stock symbols",
+        "responses": {
+          "200": {
+            "description": "Available symbols",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbols": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "example": ["AAPL", "SPY", "TSLA", "MSFT", "GOOGL"]
+                    },
+                    "count": { "type": "integer", "example": 5 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "message": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
